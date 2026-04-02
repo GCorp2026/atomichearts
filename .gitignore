@@ -1,0 +1,10 @@
+Binaries/
+Build/
+Intermediate/
+DerivedDataCache/
+Saved/
+*.VC.db
+*.opendb
+xcuserdata/
+*.xcworkspace/
+.DS_Store
