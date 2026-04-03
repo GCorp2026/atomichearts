@@ -1,0 +1,85 @@
+#include "Game/AAtomichartsGameState.h"
+#include "Game/AtomichartsTypes.h"
+#include "Kismet/GameplayStatics.h"
+#include "TimerManager.h"
+
+void AAtomichartsGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+    Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+    DOREPLIFETIME(AAtomichartsGameState, MatchState);
+    DOREPLIFETIME(AAtomichartsGameState, RedTeamScore);
+    DOREPLIFETIME(AAtomichartsGameState, BlueTeamScore);
+    DOREPLIFETIME(AAtomichartsGameState, MatchTimeRemaining);
+}
+
+void AAtomichartsGameState::StartMatch()
+{
+    MatchState = EMatchState::InProgress;
+    MatchTimeRemaining = MatchDuration;
+
+    GetWorld()->GetTimerManager().SetTimer(
+        MatchTimerHandle,
+        this,
+        &AAtomichartsGameState::MatchTimerTick,
+        1.f,
+        true
+    );
+}
+
+void AAtomichartsGameState::MatchTimerTick()
+{
+    if (MatchTimeRemaining <= 0)
+    {
+        EndMatch();
+    }
+    else
+    {
+        MatchTimeRemaining--;
+    }
+}
+
+void AAtomichartsGameState::EndMatch()
+{
+    MatchState = EMatchState::Finished;
+    GetWorld()->GetTimerManager().ClearTimer(MatchTimerHandle);
+
+    for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+    {
+        if (AAtomichartsPlayerController* PC = Cast<AAtomichartsPlayerController>(*It))
+        {
+            PC->ClientMatchEnded(RedTeamScore > BlueTeamScore ? 0 : 1);
+        }
+    }
+}
+
+void AAtomichartsGameState::AddTeamScore(int32 Team, int32 Points)
+{
+    if (Team == 0)
+    {
+        RedTeamScore += Points;
+    }
+    else
+    {
+        BlueTeamScore += Points;
+    }
+}
+
+FText AAtomichartsGameState::GetMatchTimeText() const
+{
+    const int32 Minutes = static_cast<int32>(MatchTimeRemaining) / 60;
+    const int32 Seconds = static_cast<int32>(MatchTimeRemaining) % 60;
+    return FText::FromString(FString::Printf(TEXT("%02d:%02d"), Minutes, Seconds));
+}
+
+int32 AAtomichartsGameState::GetLeadingTeam() const
+{
+    if (RedTeamScore > BlueTeamScore) return 0;
+    if (BlueTeamScore > RedTeamScore) return 1;
+    return -1;
+}
+
+void AAtomichartsGameState::OnRep_MatchState()
+{
+    // Client-side handling if needed
+}
