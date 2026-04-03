@@ -128,6 +128,12 @@ AAtomichartsCharacter::AAtomichartsCharacter()
     // Create interaction component
     InteractionComponent = CreateDefaultSubobject<UInteractionComponent>(TEXT("InteractionComponent"));
 
+    // Create class ability component
+    ClassAbilityComponent = CreateDefaultSubobject<UClassAbilityComponent>(TEXT("ClassAbilityComponent"));
+
+    // Create class stats component
+    ClassStatsComponent = CreateDefaultSubobject<UClassStatsComponent>(TEXT("ClassStatsComponent"));
+
     // Initialize default faction standings
     FactionStandings.Add(EFaction::Syndicate, 50.f);
     FactionStandings.Add(EFaction::Corporate, 50.f);
@@ -149,6 +155,7 @@ void AAtomichartsCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>
     DOREPLIFETIME(AAtomichartsCharacter, bIsGrappling);
     DOREPLIFETIME(AAtomichartsCharacter, CurrentFaction);
     DOREPLIFETIME(AAtomichartsCharacter, SubclassType);
+    DOREPLIFETIME(AAtomichartsCharacter, ClassType);
     DOREPLIFETIME(AAtomichartsCharacter, AttachedWeapons);
 }
 
@@ -336,6 +343,62 @@ void AAtomichartsCharacter::TraceWallRun()
     {
         // No wall found, stop wall run
         StopWallRun();
+    }
+}
+
+void AAtomichartsCharacter::SetClassType(EClassType NewClass)
+{
+    if (!HasAuthority())
+        return;
+
+    ClassType = NewClass;
+
+    // Configure ability component for this class
+    if (ClassAbilityComponent)
+    {
+        ClassAbilityComponent->SetClass(NewClass);
+    }
+
+    // Configure stats component for this class
+    if (ClassStatsComponent)
+    {
+        ClassStatsComponent->SetClass(NewClass);
+    }
+}
+
+void AAtomichartsCharacter::OnAbilityActivated(EAbilityType AbilityType)
+{
+    // Play ability effects based on type
+    switch (AbilityType)
+    {
+    case EAbilityType::TimeStop:
+        // Time freeze visual effect
+        OnAbilityEffect.Broadcast(AbilityType, true);
+        break;
+    case EAbilityType::Barricade:
+        // Deploy barricade mesh
+        OnAbilityEffect.Broadcast(AbilityType, true);
+        break;
+    case EAbilityType::Dodge:
+    case EAbilityType::Vanish:
+        // Invisibility / dodge effect
+        OnAbilityEffect.Broadcast(AbilityType, true);
+        break;
+    case EAbilityType::HealingRift:
+        // Spawn healing zone
+        OnAbilityEffect.Broadcast(AbilityType, true);
+        break;
+    case EAbilityType::FanTheHammer:
+        // Rapid fire effect
+        OnAbilityEffect.Broadcast(AbilityType, true);
+        break;
+    case EAbilityType::Blink:
+        // Teleport effect
+        OnAbilityEffect.Broadcast(AbilityType, true);
+        break;
+    default:
+        OnAbilityEffect.Broadcast(AbilityType, false);
+        break;
     }
 }
 

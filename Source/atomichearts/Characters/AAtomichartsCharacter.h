@@ -2,6 +2,9 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "Blaster/Character/BlasterCharacter.h"
+#include "EClassType.h"
+#include "UClassAbilityComponent.h"
+#include "UClassStatsComponent.h"
 #include "AtomicheartsCharacter.generated.h"
 
 class UCurveFloat;
@@ -83,6 +86,16 @@ public:
     UFUNCTION(BlueprintCallable) void SetSubclass(ESubclassType NewSubclass);
     UFUNCTION(BlueprintPure) ESubclassType GetSubclass() const { return SubclassType; }
 
+    // Class System (Destiny-style)
+    UFUNCTION(BlueprintCallable) void SetClassType(EClassType NewClass);
+    UFUNCTION(BlueprintPure) EClassType GetClassType() const { return ClassType; }
+    UFUNCTION(BlueprintPure) UCyberwareComponent* GetCyberwareComponent() const { return CyberwareComponent; }
+    UFUNCTION(BlueprintPure) UClassAbilityComponent* GetClassAbilityComponent() const { return ClassAbilityComponent; }
+    UFUNCTION(BlueprintPure) UClassStatsComponent* GetClassStatsComponent() const { return ClassStatsComponent; }
+
+    // Ability activation (called from ability component)
+    UFUNCTION(BlueprintCallable) void OnAbilityActivated(EAbilityType AbilityType);
+
     // Cyberware & Attachment
     UFUNCTION(BlueprintPure) UCyberwareComponent* GetCyberwareComponent() const { return CyberwareComponent; }
     UFUNCTION(BlueprintCallable) void AttachWeaponToPoint(AActor* Weapon, const FName& PointName);
@@ -113,12 +126,22 @@ private:
     UPROPERTY(Replicated, OnRep = OnRep_FactionChanged) EFaction CurrentFaction = EFaction::Neutral;
     UPROPERTY(EditAnywhere) TMap<EFaction, float> FactionStandings;
     UPROPERTY(Replicated, OnRep = OnRep_SubclassChanged) ESubclassType SubclassType = ESubclassType::Neon;
+    UPROPERTY(Replicated) EClassType ClassType = EClassType::TechMage;
+
+    // Delegate for ability effects
+    DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnAbilityEffect, EAbilityType, AbilityType, bool, bSuccess);
+    UPROPERTY(BlueprintAssignable)
+    FOnAbilityEffect OnAbilityEffect;
 
     // Components
     UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess = "true"))
     UCyberwareComponent* CyberwareComponent;
     UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess = "true"))
     UInteractionComponent* InteractionComponent;
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess = "true"))
+    UClassAbilityComponent* ClassAbilityComponent;
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess = "true"))
+    UClassStatsComponent* ClassStatsComponent;
 
     // Weapon Attachment
     UPROPERTY(EditAnywhere) TMap<FName, FName> WeaponAttachmentSockets;
