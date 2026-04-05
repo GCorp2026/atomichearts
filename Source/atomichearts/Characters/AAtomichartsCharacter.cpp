@@ -134,6 +134,9 @@ AAtomichartsCharacter::AAtomichartsCharacter()
     // Create class stats component
     ClassStatsComponent = CreateDefaultSubobject<UClassStatsComponent>(TEXT("ClassStatsComponent"));
 
+    // Create Time Mage ability set component (crowd control specialist)
+    TimeMageAbilities = CreateDefaultSubobject<UTimeMageAbilitySet>(TEXT("TimeMageAbilities"));
+
     // Initialize default faction standings
     FactionStandings.Add(EFaction::Syndicate, 50.f);
     FactionStandings.Add(EFaction::Corporate, 50.f);

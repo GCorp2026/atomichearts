@@ -1,7 +1,7 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "Weapons/UExoticWeaponGenerator.h"
-#include "Weapons/FWeaponStats.h"
+#include "Weapons/AtomicheartsWeaponTypes.h"
 #include "Weapons/FWeaponPerk.h"
 #include "Weapons/EExoticTrait.h"
 #include "Math/UnrealMathUtility.h"
@@ -144,7 +144,7 @@ FString UExoticWeaponGenerator::GetWeaponBaseName(EWeaponSlot Slot)
 
 EExoticTrait UExoticWeaponGenerator::GetSignatureTrait(int32 Index)
 {
-    // 50 unique exotic traits, cycling based on index
+    // 53 unique exotic traits, cycling based on index
     static const EExoticTrait Traits[] = {
         EExoticTrait::WolfpackRounds,
         EExoticTrait::TrackingSystem,

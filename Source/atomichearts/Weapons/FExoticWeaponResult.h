@@ -1,18 +1,20 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
+// Copyright 2026 Atomic Hearts Team
 
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Weapons/EWeaponEnums.h"
-#include "Weapons/FWeaponGeneratorResult.h"
-#include "Weapons/FWeaponStats.h"
-#include "Weapons/FWeaponPerk.h"
+#include "Weapons/EWeaponRarity.h"
+#include "Weapons/EWeaponSlot.h"
 #include "Weapons/EExoticTrait.h"
-#include "FExoticWeaponResult.generated.h"
+#include "Weapons/FWeaponGeneratorResult.h"
+#include "Weapons/AtomicheartsWeaponTypes.h"
+#include "Weapons/FWeaponPerk.h"
+#include "ExoticWeaponData.generated.h"
 
 /**
  * Extended weapon generator result for Exotic weapons.
  * Includes signature trait and lore information.
+ * Kept for backward compatibility; new code should use FExoticWeaponData.
  */
 USTRUCT(BlueprintType)
 struct ATOMICHEARTS_API FExoticWeaponResult
@@ -42,7 +44,7 @@ struct ATOMICHEARTS_API FExoticWeaponResult
     UPROPERTY() int32 ExoticIndex;
 
     FExoticWeaponResult()
-        : Slot(EWeaponSlot::Primary)
+        : Slot(EWeaponSlot::Primary_AR)
         , Rarity(EWeaponRarity::Exotic)
         , SignatureTrait(EExoticTrait::None)
         , ExoticIndex(0)

@@ -5,6 +5,7 @@
 #include "EClassType.h"
 #include "UClassAbilityComponent.h"
 #include "UClassStatsComponent.h"
+#include "TimeMageAbilitySet.h"
 #include "AtomicheartsCharacter.generated.h"
 
 class UCurveFloat;
@@ -92,6 +93,7 @@ public:
     UFUNCTION(BlueprintPure) UCyberwareComponent* GetCyberwareComponent() const { return CyberwareComponent; }
     UFUNCTION(BlueprintPure) UClassAbilityComponent* GetClassAbilityComponent() const { return ClassAbilityComponent; }
     UFUNCTION(BlueprintPure) UClassStatsComponent* GetClassStatsComponent() const { return ClassStatsComponent; }
+    UFUNCTION(BlueprintPure) UTimeMageAbilitySet* GetTimeMageAbilities() const { return TimeMageAbilities; }
 
     // Ability activation (called from ability component)
     UFUNCTION(BlueprintCallable) void OnAbilityActivated(EAbilityType AbilityType);
@@ -142,6 +144,10 @@ private:
     UClassAbilityComponent* ClassAbilityComponent;
     UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess = "true"))
     UClassStatsComponent* ClassStatsComponent;
+
+    // Time Mage abilities (crowd control specialist)
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess = "true"))
+    UTimeMageAbilitySet* TimeMageAbilities;
 
     // Weapon Attachment
     UPROPERTY(EditAnywhere) TMap<FName, FName> WeaponAttachmentSockets;

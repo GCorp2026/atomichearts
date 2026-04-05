@@ -51,4 +51,10 @@ struct FWeaponStats
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Stats")
 	float MaxRange = 10000.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Stats")
+	float CriticalChance = 0.15f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Stats")
+	float CriticalMultiplier = 1.5f;
 };

@@ -2,14 +2,18 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
-#include "Weapons/EWeaponEnums.h"
+#include "Weapons/EWeaponRarity.h"
+#include "Weapons/EWeaponSlot.h"
+#include "Weapons/EExoticTrait.h"
 #include "Weapons/FExoticWeaponResult.h"
 #include "UExoticWeaponGenerator.generated.h"
 
 /**
  * Generator for Exotic weapons with deterministic exotic index (0-99).
  * Each exotic has a unique signature trait and lore entry.
+ * 
+ * NOTE: This is the legacy generator. New code should use UExoticWeaponGenerator
+ * in ExoticWeaponGenerator.h which provides a more complete implementation.
  */
 UCLASS()
 class ATOMICHEARTS_API UExoticWeaponGenerator : public UObject
