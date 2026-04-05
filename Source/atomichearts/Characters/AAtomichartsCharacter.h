@@ -6,9 +6,13 @@
 #include "UClassAbilityComponent.h"
 #include "UClassStatsComponent.h"
 #include "TimeMageAbilitySet.h"
+#include "Movement/AtomicheartsMovementComponent.h"
+#include "Inputs/InputConfig.h"
 #include "AtomicheartsCharacter.generated.h"
 
 class UCurveFloat;
+class UAtomichartsInputConfig;
+class UAtomicheartsMovementComponent;
 
 /** EFaction - Faction alignment system */
 UENUM(BlueprintType) enum class EFaction : uint8 { Neutral = 0, Syndicate, Corporate, Resistance, Nomad };
@@ -103,11 +107,42 @@ public:
     UFUNCTION(BlueprintCallable) void AttachWeaponToPoint(AActor* Weapon, const FName& PointName);
     UFUNCTION(BlueprintCallable) void RemoveWeaponFromPoint(const FName& PointName);
 
+    // Cyberpunk Movement Getters
+    UFUNCTION(BlueprintPure) UAtomicheartsMovementComponent* GetCyberpunkMovement() const { return CyberpunkMovement; }
+    UFUNCTION(BlueprintPure) bool IsSprinting() const;
+    UFUNCTION(BlueprintPure) bool IsSliding() const;
+    UFUNCTION(BlueprintPure) bool CanDoubleJump() const;
+    UFUNCTION(BlueprintPure) bool IsDodging() const;
+
 protected:
     virtual void BeginPlay() override;
     virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
     UFUNCTION() void OnRep_FactionChanged();
     UFUNCTION() void OnRep_SubclassChanged();
+
+    // Cyberpunk Movement Input Callbacks
+    void SprintPressed();
+    void SprintReleased();
+    void SlidePressed();
+    void DoubleJumpPressed();
+    void DodgePressed(const FInputActionValue& Value);
+
+    // Server RPCs for movement validation
+    UFUNCTION(Server, Reliable, WithValidation)
+    void ServerSprintPressed();
+
+    UFUNCTION(Server, Reliable, WithValidation)
+    void ServerSprintReleased();
+
+    UFUNCTION(Server, Reliable, WithValidation)
+    void ServerSlidePressed();
+
+    UFUNCTION(Server, Reliable, WithValidation)
+    void ServerDoubleJump();
+
+    UFUNCTION(Server, Reliable, WithValidation)
+    void ServerDodge(const FVector_NetQuantize& Direction);
+
 private:
     void TraceWallRun();
     void ApplyCyberwareBonuses();
@@ -123,6 +158,13 @@ private:
     UPROPERTY(EditAnywhere) float WallTraceDistance = 100.f;
     FTimerHandle WallRunTimerHandle, GrappleTimerHandle;
     FVector WallRunNormal;
+
+    // Cyberpunk Movement
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+    UAtomicheartsMovementComponent* CyberpunkMovement;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
+    UAtomichartsInputConfig* InputConfig;
 
     // Faction & Subclass
     UPROPERTY(Replicated, OnRep = OnRep_FactionChanged) EFaction CurrentFaction = EFaction::Neutral;

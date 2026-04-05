@@ -7,6 +7,8 @@
 #include "PhysicsEngine/PhysicsSettings.h"
 #include "TimerManager.h"
 #include "Net/UnrealNetwork.h"
+#include "EnhancedInputComponent.h"
+#include "InputActionValue.h"
 
 // =============================================================================
 // UCyberwareComponent Implementation
@@ -137,6 +139,9 @@ AAtomichartsCharacter::AAtomichartsCharacter()
     // Create Time Mage ability set component (crowd control specialist)
     TimeMageAbilities = CreateDefaultSubobject<UTimeMageAbilitySet>(TEXT("TimeMageAbilities"));
 
+    // Create Cyberpunk movement component
+    CyberpunkMovement = CreateDefaultSubobject<UAtomicheartsMovementComponent>(TEXT("CyberpunkMovement"));
+
     // Initialize default faction standings
     FactionStandings.Add(EFaction::Syndicate, 50.f);
     FactionStandings.Add(EFaction::Corporate, 50.f);
@@ -191,7 +196,31 @@ void AAtomichartsCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInp
     {
         if (UEnhancedInputComponent* EnhancedInput = Cast<UEnhancedInputComponent>(PlayerInputComponent))
         {
-            // Additional input bindings can be added here
+            // Sprint input (Hold Shift)
+            if (InputConfig)
+            {
+                // Bind sprint (hold)
+                if (const UInputAction* SprintAction = InputConfig->FindNativeInputActionForTag(FGameplayTag::RequestGameplayTag(FName("Input.Sprint"))))
+                {
+                    EnhancedInput->BindAction(SprintAction, ETriggerEvent::Started, this, &AAtomichartsCharacter::SprintPressed);
+                    EnhancedInput->BindAction(SprintAction, ETriggerEvent::Completed, this, &AAtomichartsCharacter::SprintReleased);
+                }
+                // Bind slide (crouch while sprinting)
+                if (const UInputAction* SlideAction = InputConfig->FindNativeInputActionForTag(FGameplayTag::RequestGameplayTag(FName("Input.Slide"))))
+                {
+                    EnhancedInput->BindAction(SlideAction, ETriggerEvent::Triggered, this, &AAtomichartsCharacter::SlidePressed);
+                }
+                // Bind double jump
+                if (const UInputAction* DoubleJumpAction = InputConfig->FindNativeInputActionForTag(FGameplayTag::RequestGameplayTag(FName("Input.DoubleJump"))))
+                {
+                    EnhancedInput->BindAction(DoubleJumpAction, ETriggerEvent::Triggered, this, &AAtomichartsCharacter::DoubleJumpPressed);
+                }
+                // Bind dodge (double-tap direction)
+                if (const UInputAction* DodgeAction = InputConfig->FindNativeInputActionForTag(FGameplayTag::RequestGameplayTag(FName("Input.Dodge"))))
+                {
+                    EnhancedInput->BindAction(DodgeAction, ETriggerEvent::Triggered, this, &AAtomichartsCharacter::DodgePressed);
+                }
+            }
         }
     }
 }
@@ -436,4 +465,185 @@ void AAtomichartsCharacter::ApplyCyberwareBonuses()
         // Neon class already uses guns, no special bonus here
         break;
     }
+}
+
+// =============================================================================
+// Cyberpunk Movement Getters
+// =============================================================================
+
+bool AAtomichartsCharacter::IsSprinting() const
+{
+    if (CyberpunkMovement)
+    {
+        return CyberpunkMovement->IsSprinting();
+    }
+    return false;
+}
+
+bool AAtomichartsCharacter::IsSliding() const
+{
+    if (CyberpunkMovement)
+    {
+        return CyberpunkMovement->IsSliding();
+    }
+    return false;
+}
+
+bool AAtomichartsCharacter::CanDoubleJump() const
+{
+    if (CyberpunkMovement)
+    {
+        return CyberpunkMovement->CanDoubleJump();
+    }
+    return false;
+}
+
+bool AAtomichartsCharacter::IsDodging() const
+{
+    if (CyberpunkMovement)
+    {
+        return CyberpunkMovement->IsDodging();
+    }
+    return false;
+}
+
+// =============================================================================
+// Cyberpunk Movement Input Callbacks
+// =============================================================================
+
+void AAtomichartsCharacter::SprintPressed()
+{
+    if (!HasAuthority())
+    {
+        ServerSprintPressed();
+    }
+    if (CyberpunkMovement)
+    {
+        CyberpunkMovement->StartSprint();
+    }
+}
+
+void AAtomichartsCharacter::SprintReleased()
+{
+    if (!HasAuthority())
+    {
+        ServerSprintReleased();
+    }
+    if (CyberpunkMovement)
+    {
+        CyberpunkMovement->StopSprint();
+    }
+}
+
+void AAtomichartsCharacter::SlidePressed()
+{
+    if (!HasAuthority())
+    {
+        ServerSlidePressed();
+    }
+    if (CyberpunkMovement)
+    {
+        CyberpunkMovement->StartSlide();
+    }
+}
+
+void AAtomichartsCharacter::DoubleJumpPressed()
+{
+    if (!HasAuthority())
+    {
+        ServerDoubleJump();
+    }
+    if (CyberpunkMovement)
+    {
+        CyberpunkMovement->DoubleJump();
+    }
+}
+
+void AAtomichartsCharacter::DodgePressed(const FInputActionValue& Value)
+{
+    FVector2D DirectionValue = Value.Get<FVector2D>();
+    
+    // Convert screen direction to world direction
+    FRotator YawRotation(0.f, GetControlRotation().Yaw, 0.f);
+    FVector ForwardVector = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
+    FVector RightVector = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+    FVector DodgeDirection = (ForwardVector * DirectionValue.Y + RightVector * DirectionValue.X).GetSafeNormal();
+    
+    if (!HasAuthority())
+    {
+        ServerDodge(DodgeDirection);
+    }
+    if (CyberpunkMovement)
+    {
+        CyberpunkMovement->Dodge(DodgeDirection);
+    }
+}
+
+// =============================================================================
+// Server RPCs for Movement Validation
+// =============================================================================
+
+void AAtomichartsCharacter::ServerSprintPressed_Implementation()
+{
+    if (CyberpunkMovement)
+    {
+        CyberpunkMovement->StartSprint();
+    }
+}
+
+bool AAtomichartsCharacter::ServerSprintPressed_Validate()
+{
+    return true;
+}
+
+void AAtomichartsCharacter::ServerSprintReleased_Implementation()
+{
+    if (CyberpunkMovement)
+    {
+        CyberpunkMovement->StopSprint();
+    }
+}
+
+bool AAtomichartsCharacter::ServerSprintReleased_Validate()
+{
+    return true;
+}
+
+void AAtomichartsCharacter::ServerSlidePressed_Implementation()
+{
+    if (CyberpunkMovement)
+    {
+        CyberpunkMovement->StartSlide();
+    }
+}
+
+bool AAtomichartsCharacter::ServerSlidePressed_Validate()
+{
+    return true;
+}
+
+void AAtomichartsCharacter::ServerDoubleJump_Implementation()
+{
+    if (CyberpunkMovement)
+    {
+        CyberpunkMovement->DoubleJump();
+    }
+}
+
+bool AAtomichartsCharacter::ServerDoubleJump_Validate()
+{
+    return true;
+}
+
+void AAtomichartsCharacter::ServerDodge_Implementation(const FVector_NetQuantize& Direction)
+{
+    if (CyberpunkMovement)
+    {
+        CyberpunkMovement->Dodge(Direction);
+    }
+}
+
+bool AAtomichartsCharacter::ServerDodge_Validate(const FVector_NetQuantize& Direction)
+{
+    return Direction.Size() > 0.1f;
 }
