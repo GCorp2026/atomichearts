@@ -1,6 +1,8 @@
 #include "Game/AAtomichartsPlayerState.h"
 #include "Components/ProgressionComponent.h"
 #include "Components/FactionReputationComponent.h"
+#include "Currency/UCurrencyComponent.h"
+#include "Inventory/InventoryComponent.h"
 #include "Game/AAtomichartsGameState.h"
 
 void AAtomichartsPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -16,6 +18,8 @@ AAtomichartsPlayerState::AAtomichartsPlayerState()
 {
     ProgressionComponent = CreateDefaultSubobject<UProgressionComponent>(TEXT("ProgressionComponent"));
     FactionReputationComponent = CreateDefaultSubobject<UFactionReputationComponent>(TEXT("FactionReputationComponent"));
+    CurrencyComponent = CreateDefaultSubobject<UCurrencyComponent>(TEXT("CurrencyComponent"));
+    InventoryComponent = CreateDefaultSubobject<UInventoryComponent>(TEXT("InventoryComponent"));
 }
 
 void AAtomichartsPlayerState::BeginPlay()

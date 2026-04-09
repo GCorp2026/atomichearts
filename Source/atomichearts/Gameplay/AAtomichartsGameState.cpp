@@ -1,7 +1,13 @@
 #include "Game/AAtomichartsGameState.h"
 #include "Game/AtomichartsTypes.h"
+#include "Marketplace/UMarketplaceManager.h"
 #include "Kismet/GameplayStatics.h"
 #include "TimerManager.h"
+
+AAtomichartsGameState::AAtomichartsGameState()
+{
+    MarketplaceManager = CreateDefaultSubobject<UMarketplaceManager>(TEXT("MarketplaceManager"));
+}
 
 void AAtomichartsGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {

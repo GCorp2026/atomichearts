@@ -139,7 +139,10 @@ void ACombatCharacter::DoComboAttackStart()
 
 void ACombatCharacter::DoComboAttackEnd()
 {
-	// stub
+    // Reset combo state, allow next combo
+    bCanCombo = true;
+    CurrentCombo = 0;
+    UE_LOG(LogCombatCharacter, Log, TEXT("Combo attack ended"));
 }
 
 void ACombatCharacter::DoChargedAttackStart()
@@ -422,12 +425,27 @@ void ACombatCharacter::HandleDeath()
 
 void ACombatCharacter::ApplyHealing(float Healing, AActor* Healer)
 {
-	// stub
+    if (Healing <= 0.0f) return;
+    
+    float CurrentHealth = GetHealth();
+    float MaxHealth = GetMaxHealth();
+    
+    if (CurrentHealth >= MaxHealth) return; // Already at full health
+    
+    float NewHealth = FMath::Min(CurrentHealth + Healing, MaxHealth);
+    SetHealth(NewHealth);
+    
+    UE_LOG(LogCombatCharacter, Log, TEXT("Applied healing %.1f from %s, health now %.1f/%.1f"), 
+        Healing, Healer ? *Healer->GetName() : TEXT("None"), NewHealth, MaxHealth);
 }
 
 void ACombatCharacter::NotifyDanger(const FVector& DangerLocation, AActor* DangerSource)
 {
-	// stub
+    // Trigger danger response: play alert animation, sound, or AI reaction
+    UE_LOG(LogCombatCharacter, Log, TEXT("Danger notified at %s from %s"), 
+        *DangerLocation.ToString(), DangerSource ? *DangerSource->GetName() : TEXT("Unknown"));
+    
+    // Implement danger response in blueprint or AI
 }
 
 void ACombatCharacter::RespawnCharacter()

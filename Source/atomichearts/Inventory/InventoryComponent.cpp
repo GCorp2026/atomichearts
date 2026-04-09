@@ -1,4 +1,5 @@
 #include "InventoryComponent.h"
+#include "Marketplace/UMarketplaceManager.h"
 
 void UInventoryComponent::BeginPlay()
 {
@@ -177,4 +178,40 @@ bool UInventoryComponent::SetItemLocked(const FString& ItemId, bool bLocked)
 bool UInventoryComponent::IsItemLocked(const FString& ItemId) const
 {
     return LockedItemIds.Contains(ItemId);
+}
+
+void UInventoryComponent::SetMarketplaceManager(UMarketplaceManager* Marketplace)
+{
+    if (!Marketplace)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("SetMarketplaceManager: Marketplace is null"));
+        return;
+    }
+    
+    // Bind to the OnSellerItemUnlocked delegate
+    Marketplace->OnSellerItemUnlocked.AddDynamic(this, &UInventoryComponent::OnSellerItemUnlocked);
+    UE_LOG(LogTemp, Log, TEXT("InventoryComponent: Bound to Marketplace OnSellerItemUnlocked"));
+}
+
+void UInventoryComponent::OnSellerItemUnlocked(int64 SellerID, const FString& ItemID, FGuid ListingID, bool bSold)
+{
+    // Only unlock if this inventory belongs to the seller
+    if (SellerID != OwnerPlayerID)
+    {
+        return;
+    }
+    
+    // Unlock the item (if sold, it should be removed from inventory; if cancelled, just unlock)
+    if (bSold)
+    {
+        // Item was sold — remove from inventory
+        RemoveItem(ItemID);
+        UE_LOG(LogTemp, Log, TEXT("OnSellerItemUnlocked: Item %s sold, removed from inventory"), *ItemID);
+    }
+    else
+    {
+        // Listing cancelled — just unlock
+        SetItemLocked(ItemID, false);
+        UE_LOG(LogTemp, Log, TEXT("OnSellerItemUnlocked: Item %s unlocked (cancelled)"), *ItemID);
+    }
 }

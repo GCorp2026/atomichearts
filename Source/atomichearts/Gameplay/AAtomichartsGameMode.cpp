@@ -2,6 +2,9 @@
 #include "Character/AtomichartsCharacter.h"
 #include "Controller/AtomichartsPlayerController.h"
 #include "Game/AAtomichartsGameState.h"
+#include "Game/AAtomichartsPlayerState.h"
+#include "Currency/UCurrencyComponent.h"
+#include "Marketplace/UMarketplaceManager.h"
 #include "Game/AtomichartsTypes.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -113,5 +116,63 @@ void AAtomichartsGameMode::CheckMatchEnd()
         {
             EndMatch();
         }
+    }
+}
+
+void AAtomichartsGameMode::PostLogin(APlayerController* NewPlayer)
+{
+    Super::PostLogin(NewPlayer);
+    
+    if (AAtomichartsPlayerState* PlayerState = NewPlayer->GetPlayerState<AAtomichartsPlayerState>())
+    {
+        WirePlayerMarketplace(PlayerState);
+    }
+}
+
+void AAtomichartsGameMode::WirePlayerMarketplace(AAtomichartsPlayerState* PlayerState)
+{
+    if (!PlayerState)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("WirePlayerMarketplace: PlayerState is null"));
+        return;
+    }
+    
+    // Get marketplace manager from game state
+    if (AAtomichartsGameState* GameState = GetGameState<AAtomichartsGameState>())
+    {
+        if (UMarketplaceManager* Marketplace = GameState->GetMarketplaceManager())
+        {
+            // Wire currency component
+            if (PlayerState->CurrencyComponent)
+            {
+                PlayerState->CurrencyComponent->SetOwnerPlayerID(PlayerState->GetPlayerId());
+                PlayerState->CurrencyComponent->SetMarketplaceManager(Marketplace);
+                UE_LOG(LogTemp, Log, TEXT("WirePlayerMarketplace: CurrencyComponent for player %d wired"), PlayerState->GetPlayerId());
+            }
+            else
+            {
+                UE_LOG(LogTemp, Warning, TEXT("WirePlayerMarketplace: CurrencyComponent is null"));
+            }
+            
+            // Wire inventory component
+            if (PlayerState->InventoryComponent)
+            {
+                PlayerState->InventoryComponent->SetOwnerPlayerID(PlayerState->GetPlayerId());
+                PlayerState->InventoryComponent->SetMarketplaceManager(Marketplace);
+                UE_LOG(LogTemp, Log, TEXT("WirePlayerMarketplace: InventoryComponent for player %d wired"), PlayerState->GetPlayerId());
+            }
+            else
+            {
+                UE_LOG(LogTemp, Warning, TEXT("WirePlayerMarketplace: InventoryComponent is null"));
+            }
+        }
+        else
+        {
+            UE_LOG(LogTemp, Warning, TEXT("WirePlayerMarketplace: MarketplaceManager is null"));
+        }
+    }
+    else
+    {
+        UE_LOG(LogTemp, Warning, TEXT("WirePlayerMarketplace: GameState is null"));
     }
 }

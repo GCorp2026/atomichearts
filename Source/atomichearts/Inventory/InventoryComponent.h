@@ -9,6 +9,8 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnItemAdded, const FLootBoxReward&
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnItemRemoved, const FString&, ItemId);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnShardsChanged, int32, NewTotal);
 
+class UMarketplaceManager;
+
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class ATOMICHEARTS_API UInventoryComponent : public UActorComponent
 {
@@ -62,6 +64,12 @@ public:
 
 	UFUNCTION(BlueprintPure, Category = "Inventory")
 	int64 GetOwnerPlayerID() const { return OwnerPlayerID; }
+
+	UFUNCTION(BlueprintCallable, Category = "Inventory")
+	void SetMarketplaceManager(UMarketplaceManager* Marketplace);
+
+	UFUNCTION()
+	void OnSellerItemUnlocked(int64 SellerID, const FString& ItemID, FGuid ListingID, bool bSold);
 
 public:
 	UPROPERTY(BlueprintAssignable, Category = "Inventory")

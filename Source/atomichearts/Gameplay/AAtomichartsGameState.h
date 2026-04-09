@@ -6,6 +6,7 @@
 #include "AAtomichartsGameState.generated.h"
 
 class AAtomichartsPlayerController;
+class UMarketplaceManager;
 
 UCLASS()
 class ATOMICHEARTS_API AAtomichartsGameState : public AGameState
@@ -39,7 +40,12 @@ public:
     UPROPERTY(EditAnywhere, Category = "Match")
     EActivityType ActivityType = EActivityType::Patrol;
 
-    UFUNCTION(BlueprintCallable, Category = "Match")
+    // Marketplace
+    UPROPERTY(BlueprintReadOnly, Category = "Marketplace")
+    TObjectPtr<UMarketplaceManager> MarketplaceManager;
+
+    UFUNCTION(BlueprintCallable, Category = "Marketplace")
+    UMarketplaceManager* GetMarketplaceManager() const { return MarketplaceManager; }
     void StartMatch();
 
     UFUNCTION(BlueprintCallable, Category = "Match")

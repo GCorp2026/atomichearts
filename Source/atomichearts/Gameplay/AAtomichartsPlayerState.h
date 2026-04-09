@@ -7,6 +7,7 @@
 
 class UProgressionComponent;
 class UFactionReputationComponent;
+class UCurrencyComponent;
 
 UCLASS()
 class ATOMICHEARTS_API AAtomichartsPlayerState : public APlayerState
@@ -39,6 +40,14 @@ public:
     // Faction Reputation
     UPROPERTY(BlueprintReadOnly, Category = "Faction", meta = (AllowPrivateAccess = "true"))
     TObjectPtr<UFactionReputationComponent> FactionReputationComponent;
+
+    // Currency
+    UPROPERTY(BlueprintReadOnly, Category = "Currency", meta = (AllowPrivateAccess = "true"))
+    TObjectPtr<UCurrencyComponent> CurrencyComponent;
+
+    // Inventory
+    UPROPERTY(BlueprintReadOnly, Category = "Inventory", meta = (AllowPrivateAccess = "true"))
+    TObjectPtr<UInventoryComponent> InventoryComponent;
 
     UFUNCTION(BlueprintCallable, Category = "Stats")
     void AddKill();

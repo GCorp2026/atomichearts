@@ -7,6 +7,9 @@
 
 class AAtomichartsCharacter;
 class AAtomichartsPlayerController;
+class AAtomichartsPlayerState;
+class UCurrencyComponent;
+class UMarketplaceManager;
 
 UCLASS()
 class ATOMICHEARTS_API AAtomichartsGameMode : public AGameMode
@@ -32,6 +35,10 @@ public:
     bool IsMatchActive() const;
 
 protected:
+    virtual void PostLogin(APlayerController* NewPlayer) override;
+    
+    void WirePlayerMarketplace(AAtomichartsPlayerState* PlayerState);
+
     UPROPERTY(EditAnywhere, Category = "Respawn")
     float RespawnDelay = 5.f;
 
