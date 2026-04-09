@@ -61,7 +61,12 @@ protected:
 
     /** Rarity upgrade table */
     UPROPERTY(EditDefaultsOnly, Category="Progression")
-    TArray<FRarityUpgradePath> RarityUpgradePaths;
+    TArray<FRarityUpgradePath> RarityUpgradePaths = {
+        { EWeaponRarity::Common,     EWeaponRarity::Uncommon,  5000, 10.f, 0.05f },
+        { EWeaponRarity::Uncommon,   EWeaponRarity::Rare,      10000, 15.f, 0.08f },
+        { EWeaponRarity::Rare,       EWeaponRarity::Epic,      20000, 20.f, 0.10f },
+        { EWeaponRarity::Epic,       EWeaponRarity::Legendary, 40000, 30.f, 0.15f }
+    };
 
     UPROPERTY(EditDefaultsOnly, Category="Progression")
     int32 BaseXPPerKill = 100;

@@ -36,6 +36,8 @@ void UWeaponProgressionComponent::AddXP(int32 Amount, bool bIsHeadshot) {
         State.Headshots++;
     }
 
+    // #3: Increment kill count on XP gain
+    State.TotalKills++;
     State.CurrentXP += Amount;
     OnXPAdded.Broadcast(Amount, State.CurrentXP);
 
