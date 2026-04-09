@@ -26,8 +26,13 @@ public:
     UFUNCTION(BlueprintCallable)
     void AddCurrency(int32 Amount, int64 PlayerID);
 
+    /** Set the MarketplaceManager to bind events to */
     UFUNCTION(BlueprintCallable)
-    bool RemoveCurrency(int32 Amount, int64 PlayerID);
+    void SetMarketplaceManager(UMarketplaceManager* InMarketplace);
+
+    /** Set the player ID this component belongs to */
+    UFUNCTION(BlueprintCallable)
+    void SetOwnerPlayerID(int64 InPlayerID);
 
     /** Called by marketplace when a purchase completes */
     UFUNCTION(BlueprintCallable)
@@ -42,6 +47,10 @@ public:
 
     UPROPERTY(BlueprintAssignable)
     FOnItemPurchased OnItemPurchased;
+
+    /** Player-scoped event: fires only if this player is buyer or seller */
+    UPROPERTY(BlueprintAssignable)
+    FOnItemPurchased OnLocalItemPurchased;
 
 protected:
     void BeginPlay() override;

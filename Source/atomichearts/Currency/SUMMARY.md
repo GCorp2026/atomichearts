@@ -38,7 +38,31 @@ MarketplaceManager.OnItemSold
 Marketplace->OnItemSold.AddDynamic(CurrencyComponent, &UCurrencyComponent::OnMarketplacePurchase);
 ```
 
+## Bugs Fixed (2026-04-09)
+
+| Bug | Fix |
+|-----|-----|
+| OwnerPlayerID = 0 hardcoded | Added `SetOwnerPlayerID()` method, removed hardcoded 0 |
+| Marketplace pointer never assigned | Added `SetMarketplaceManager()` method, auto-binds |
+| OnItemPurchased broadcasts to all players | Now only fires if `OwnerPlayerID == BuyerID || OwnerPlayerID == SellerID` |
+
+## New Methods
+```cpp
+SetOwnerPlayerID(int64 InPlayerID)          // Must be called after spawn
+SetMarketplaceManager(UMarketplaceManager*) // Auto-binds to OnItemSold
+```
+
+## Updated Wiring
+```cpp
+// In PlayerState or PlayerController:
+CurrencyComponent->SetOwnerPlayerID(PlayerID);
+CurrencyComponent->SetMarketplaceManager(MarketplaceManager);
+// Marketplace binding happens automatically in SetMarketplaceManager
+```
+
 ## TODO
-- [ ] Wire `Marketplace->OnItemSold` to `CurrencyComponent->OnMarketplacePurchase` in BP
-- [ ] Verify `OwnerPlayerID` is set correctly from owning PlayerState
-- [ ] Add initial balance grant on new player creation
+- [x] Fix OwnerPlayerID = 0 hardcoded
+- [x] Fix Marketplace pointer never assigned
+- [x] Fix OnItemPurchased broadcasts to all players
+- [ ] Call `SetOwnerPlayerID()` from PlayerState on player login
+- [ ] Call `SetMarketplaceManager()` from GameMode/GameInstance
