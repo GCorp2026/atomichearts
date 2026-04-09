@@ -50,6 +50,7 @@ public:
 
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
     virtual void Tick(float DeltaTime) override;
+    virtual float TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
 
     // Companion Management
     UFUNCTION(BlueprintCallable)
@@ -137,6 +138,9 @@ private:
     // Role Bonuses
     UPROPERTY(EditAnywhere)
     float TankBonusArmor = 50.f;
+
+    UPROPERTY(EditAnywhere)
+    float VanguardDamageReduction = 0.5f; // 50% damage reduction when role is Vanguard
 
     UPROPERTY(EditAnywhere)
     float SupportBonusHealing = 20.f;

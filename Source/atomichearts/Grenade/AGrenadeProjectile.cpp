@@ -7,10 +7,13 @@
 #include "Kismet/GameplayStatics.h"
 #include "DrawDebugHelpers.h"
 #include "TimerManager.h"
+#include "Net/UnrealNetwork.h"
 
 AGrenadeProjectile::AGrenadeProjectile()
 {
 	PrimaryActorTick.bCanEverTick = false;
+	bReplicates = true;
+	bReplicateMovement = true;
 
 	// Create collision sphere
 	CollisionSphere = CreateDefaultSubobject<USphereComponent>(TEXT("CollisionSphere"));
@@ -27,11 +30,19 @@ AGrenadeProjectile::AGrenadeProjectile()
 	ProjectileMovement->bRotationFollowsVelocity = true;
 	ProjectileMovement->bShouldBounce = true;
 	ProjectileMovement->Bounciness = 0.3f;
+	ProjectileMovement->SetIsReplicated(true);
 
 	// Create particle system (placeholder)
 	ParticleSystem = CreateDefaultSubobject<UParticleSystemComponent>(TEXT("ParticleSystem"));
 	ParticleSystem->SetupAttachment(RootComponent);
 	ParticleSystem->bAutoActivate = true;
+}
+
+void AGrenadeProjectile::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(AGrenadeProjectile, Damage);
+	DOREPLIFETIME(AGrenadeProjectile, ExplosionRadius);
 }
 
 void AGrenadeProjectile::BeginPlay()

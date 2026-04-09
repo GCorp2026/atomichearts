@@ -21,6 +21,8 @@ class ATOMICHEARTS_API AGrenadeProjectile : public AActor
 public:
 	AGrenadeProjectile();
 
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
 	/** Called when projectile hits something */
 	UFUNCTION()
 	void OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
@@ -47,11 +49,11 @@ protected:
 	virtual void ApplyEffects(const FVector& ExplosionLocation);
 
 	/** Damage dealt by explosion */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grenade")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grenade", Replicated)
 	float Damage = 50.f;
 
 	/** Explosion radius */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grenade")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grenade", Replicated)
 	float ExplosionRadius = 400.f;
 
 	/** Fuse time before auto‑explosion (seconds) */

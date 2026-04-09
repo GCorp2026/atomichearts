@@ -20,6 +20,8 @@ class ATOMICHEARTS_API ASolarBurnZoneActor : public AActor
 public:
 	ASolarBurnZoneActor();
 
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
 	/** Start burning */
 	void StartBurning();
 
@@ -50,11 +52,11 @@ private:
 	void DestroyZone();
 
 	/** Damage per burn tick */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Solar Burn", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Solar Burn", meta = (AllowPrivateAccess = "true"))
 	float BurnDamage = 10.f;
 
 	/** Zone radius */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Solar Burn", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Solar Burn", meta = (AllowPrivateAccess = "true"))
 	float ZoneRadius = 400.f;
 
 	/** Time between burn ticks (seconds) */

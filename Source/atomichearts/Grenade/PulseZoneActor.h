@@ -20,6 +20,8 @@ class ATOMICHEARTS_API APulseZoneActor : public AActor
 public:
 	APulseZoneActor();
 
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
 	/** Start pulsing */
 	void StartPulsing();
 
@@ -50,19 +52,19 @@ private:
 	void DestroyZone();
 
 	/** Damage per pulse */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Pulse Zone", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Pulse Zone", meta = (AllowPrivateAccess = "true"))
 	float PulseDamage = 20.f;
 
 	/** Zone radius */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Pulse Zone", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Pulse Zone", meta = (AllowPrivateAccess = "true"))
 	float ZoneRadius = 400.f;
 
 	/** Time between pulses (seconds) */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Pulse Zone", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Pulse Zone", meta = (AllowPrivateAccess = "true"))
 	float PulseInterval = 1.f;
 
 	/** Total lifetime of zone (seconds) */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Pulse Zone", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Pulse Zone", meta = (AllowPrivateAccess = "true"))
 	float ZoneDuration = 10.f;
 
 	/** Collision sphere representing zone */

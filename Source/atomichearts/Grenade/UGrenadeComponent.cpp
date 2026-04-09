@@ -45,6 +45,12 @@ void UGrenadeComponent::SetCooldown(float NewCooldown)
 
 void UGrenadeComponent::ThrowGrenade()
 {
+	if (!HasAuthority())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ThrowGrenade called on client - ignoring"));
+		return;
+	}
+
 	if (!IsReady())
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Grenade on cooldown"));

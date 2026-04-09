@@ -83,10 +83,11 @@ void ASolarBurnZoneActor::ApplyBurn()
 			continue;
 
 		// Apply burn damage
+		AController* InstigatorController = GetInstigatorController();
 		UGameplayStatics::ApplyDamage(
 			Actor,
 			BurnDamage,
-			GetInstigatorController(),
+			InstigatorController ? InstigatorController : nullptr,
 			this,
 			nullptr
 		);

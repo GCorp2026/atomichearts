@@ -34,6 +34,10 @@ public:
     UFUNCTION(BlueprintPure, Category = "Match")
     bool IsMatchActive() const;
 
+    /** Returns true if this game mode is a PvE Strike mode (wave‑based) */
+    UFUNCTION(BlueprintPure, Category = "Match")
+    virtual bool IsStrikeMode() const { return false; }
+
 protected:
     virtual void PostLogin(APlayerController* NewPlayer) override;
     

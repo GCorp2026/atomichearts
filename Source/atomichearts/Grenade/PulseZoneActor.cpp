@@ -6,10 +6,12 @@
 #include "Kismet/GameplayStatics.h"
 #include "DrawDebugHelpers.h"
 #include "TimerManager.h"
+#include "Net/UnrealNetwork.h"
 
 APulseZoneActor::APulseZoneActor()
 {
 	PrimaryActorTick.bCanEverTick = false;
+	bReplicates = true;
 
 	// Create zone sphere
 	ZoneSphere = CreateDefaultSubobject<USphereComponent>(TEXT("ZoneSphere"));
@@ -22,6 +24,15 @@ APulseZoneActor::APulseZoneActor()
 	PulseParticle = CreateDefaultSubobject<UParticleSystemComponent>(TEXT("PulseParticle"));
 	PulseParticle->SetupAttachment(RootComponent);
 	PulseParticle->bAutoActivate = true;
+}
+
+void APulseZoneActor::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(APulseZoneActor, PulseDamage);
+	DOREPLIFETIME(APulseZoneActor, ZoneRadius);
+	DOREPLIFETIME(APulseZoneActor, PulseInterval);
+	DOREPLIFETIME(APulseZoneActor, ZoneDuration);
 }
 
 void APulseZoneActor::BeginPlay()
@@ -83,10 +94,11 @@ void APulseZoneActor::ApplyPulse()
 			continue;
 
 		// Apply damage
+		AController* InstigatorController = GetInstigatorController();
 		UGameplayStatics::ApplyDamage(
 			Actor,
 			PulseDamage,
-			GetInstigatorController(),
+			InstigatorController ? InstigatorController : nullptr,
 			this,
 			nullptr
 		);

@@ -9,6 +9,8 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "TimerManager.h"
 #include "Net/UnrealNetwork.h"
+#include "GameFramework/DamageType.h"
+#include "Variant_Combat/Interfaces/CombatDamageable.h"
 
 // =============================================================================
 // ACompanionCharacter Implementation
@@ -127,10 +129,9 @@ void ACompanionCharacter::SetCompanionRole(ECompanionRole NewRole)
     switch (CompanionRole)
     {
     case ECompanionRole::Vanguard:
-        if (UCombatComponent* Combat = FindComponentByClass<UCombatComponent>())
-        {
-            Combat->TakeDamage(1.f - TankBonusArmor / 100.f); // Reduce damage taken
-        }
+        // Set damage reduction based on TankBonusArmor (percentage)
+        VanguardDamageReduction = TankBonusArmor / 100.f;
+        UE_LOG(LogTemp, Log, TEXT("Vanguard role set: damage reduction = %.0f%%"), VanguardDamageReduction * 100.f);
         break;
 
     case ECompanionRole::Scout:
@@ -427,10 +428,16 @@ void ACompanionCharacter::CastBuff()
     // Apply healing or buff to owner
     if (OwnerPlayer)
     {
-        // Assuming owner has a method ApplyHealing(float Amount)
-        // OwnerPlayer->ApplyHealing(SupportBonusHealing);
-        // For now, just log
-        UE_LOG(LogTemp, Log, TEXT("Companion cast buff on owner"));
+        // Try to apply healing via the CombatDamageable interface
+        if (OwnerPlayer->GetClass()->ImplementsInterface(UCombatDamageable::StaticClass()))
+        {
+            Execute_ApplyHealing(OwnerPlayer, SupportBonusHealing, this);
+            UE_LOG(LogTemp, Log, TEXT("Companion healed owner for %.1f health"), SupportBonusHealing);
+        }
+        else
+        {
+            UE_LOG(LogTemp, Warning, TEXT("Companion CastBuff: Owner does not implement CombatDamageable interface"));
+        }
     }
 
     BuffCooldownRemaining = 10.f; // Cooldown 10 seconds
@@ -491,5 +498,17 @@ void ACompanionCharacter::PerformAttack()
 
     AttackCooldownRemaining = 2.f; // Cooldown 2 seconds
     UE_LOG(LogTemp, Log, TEXT("Companion attacked enemy: %s"), *NearestEnemy->GetName());
+}
+
+float ACompanionCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+{
+    float ActualDamage = DamageAmount;
+    if (CompanionRole == ECompanionRole::Vanguard)
+    {
+        float ReductionFactor = 1.f - VanguardDamageReduction;
+        ActualDamage *= ReductionFactor;
+        UE_LOG(LogTemp, Log, TEXT("Vanguard damage reduction applied: original=%.2f, reduced=%.2f (reduction %.0f%%)"), DamageAmount, ActualDamage, VanguardDamageReduction * 100.f);
+    }
+    return Super::TakeDamage(ActualDamage, DamageEvent, EventInstigator, DamageCauser);
 }
 
