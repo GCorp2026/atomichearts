@@ -25,6 +25,18 @@ ACompanionCharacter::ACompanionCharacter()
         Movement->bUseFlatBaseForFloorCheck = true;
         Movement->RotationRate = FRotator(0.f, 360.f, 0.f);
     }
+
+    // Create detection sphere
+    DetectionSphere = CreateDefaultSubobject<USphereComponent>(TEXT("DetectionSphere"));
+    DetectionSphere->SetupAttachment(RootComponent);
+    DetectionSphere->SetSphereRadius(1000.f);
+    DetectionSphere->SetCollisionProfileName(TEXT("OverlapAllDynamic"));
+    DetectionSphere->SetGenerateOverlapEvents(true);
+    DetectionSphere->SetHiddenInGame(true); // Debug: set to false to see sphere
+
+    // Initialize cooldowns
+    BuffCooldownRemaining = 0.f;
+    AttackCooldownRemaining = 0.f;
 }
 
 void ACompanionCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -43,6 +55,16 @@ void ACompanionCharacter::BeginPlay()
 
     // Apply role bonuses
     SetCompanionRole(CompanionRole);
+
+    // Bind detection sphere overlap events
+    if (DetectionSphere)
+    {
+        DetectionSphere->OnComponentBeginOverlap.AddDynamic(this, &ACompanionCharacter::OnDetectionSphereBeginOverlap);
+        DetectionSphere->OnComponentEndOverlap.AddDynamic(this, &ACompanionCharacter::OnDetectionSphereEndOverlap);
+    }
+
+    // Start AI evaluation timer (every 0.5 seconds)
+    GetWorldTimerManager().SetTimer(AIEvaluationTimerHandle, this, &ACompanionCharacter::EvaluateState, 0.5f, true);
 }
 
 void ACompanionCharacter::Tick(float DeltaTime)
@@ -51,6 +73,10 @@ void ACompanionCharacter::Tick(float DeltaTime)
 
     if (!HasAuthority())
         return;
+
+    // Update cooldowns
+    BuffCooldownRemaining = FMath::Max(0.f, BuffCooldownRemaining - DeltaTime);
+    AttackCooldownRemaining = FMath::Max(0.f, AttackCooldownRemaining - DeltaTime);
 
     switch (CompanionState)
     {
@@ -330,3 +356,140 @@ void ACompanionCharacter::UpdateSupportBehavior(float DeltaTime)
         }
     }
 }
+
+void ACompanionCharacter::OnDetectionSphereBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+    if (!HasAuthority())
+        return;
+
+    // Only consider actors with tag "Enemy"
+    if (OtherActor && OtherActor->ActorHasTag(TEXT("Enemy")))
+    {
+        // Avoid duplicates
+        if (!DetectedEnemies.Contains(OtherActor))
+        {
+            DetectedEnemies.Add(OtherActor);
+            UE_LOG(LogTemp, Log, TEXT("Companion detected enemy: %s"), *OtherActor->GetName());
+        }
+    }
+}
+
+void ACompanionCharacter::OnDetectionSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+{
+    if (!HasAuthority())
+        return;
+
+    if (OtherActor && DetectedEnemies.Contains(OtherActor))
+    {
+        DetectedEnemies.Remove(OtherActor);
+        UE_LOG(LogTemp, Log, TEXT("Companion lost enemy: %s"), *OtherActor->GetName());
+    }
+}
+
+void ACompanionCharacter::EvaluateState()
+{
+    if (!HasAuthority())
+        return;
+
+    // If owner health low (<50%) and role is Support, cast buff
+    if (OwnerPlayer && CompanionRole == ECompanionRole::Support)
+    {
+        float HealthPercent = OwnerPlayer->GetHealth() / OwnerPlayer->GetMaxHealth();
+        if (HealthPercent < 0.5f)
+        {
+            CastBuff();
+            return;
+        }
+    }
+
+    // If enemies detected, attack nearest
+    if (DetectedEnemies.Num() > 0)
+    {
+        PerformAttack();
+        return;
+    }
+
+    // Otherwise follow owner (if exists)
+    if (OwnerPlayer)
+    {
+        FollowOwner();
+    }
+}
+
+void ACompanionCharacter::CastBuff()
+{
+    if (!HasAuthority())
+        return;
+
+    if (BuffCooldownRemaining > 0.f)
+        return;
+
+    // Apply healing or buff to owner
+    if (OwnerPlayer)
+    {
+        // Assuming owner has a method ApplyHealing(float Amount)
+        // OwnerPlayer->ApplyHealing(SupportBonusHealing);
+        // For now, just log
+        UE_LOG(LogTemp, Log, TEXT("Companion cast buff on owner"));
+    }
+
+    BuffCooldownRemaining = 10.f; // Cooldown 10 seconds
+}
+
+void ACompanionCharacter::PerformAttack()
+{
+    if (!HasAuthority())
+        return;
+
+    if (AttackCooldownRemaining > 0.f)
+        return;
+
+    // Find nearest enemy
+    AActor* NearestEnemy = nullptr;
+    float NearestDist = FLT_MAX;
+    FVector MyLocation = GetActorLocation();
+    for (AActor* Enemy : DetectedEnemies)
+    {
+        if (!IsValid(Enemy))
+            continue;
+        float Dist = FVector::Dist(MyLocation, Enemy->GetActorLocation());
+        if (Dist < NearestDist)
+        {
+            NearestDist = Dist;
+            NearestEnemy = Enemy;
+        }
+    }
+    if (!NearestEnemy)
+        return;
+
+    // Attack based on role
+    switch (CompanionRole)
+    {
+    case ECompanionRole::Vanguard:
+        // Melee attack
+        AttackTarget(NearestEnemy);
+        break;
+    case ECompanionRole::Sniper:
+        // Spawn projectile (call ability)
+        UseAbility(1);
+        break;
+    case ECompanionRole::Hacker:
+        // Apply debuff (call ability)
+        UseAbility(2);
+        break;
+    case ECompanionRole::Support:
+        // Support role may also attack with weak ability
+        UseAbility(0);
+        break;
+    case ECompanionRole::Scout:
+        // Scout may attack with ranged
+        UseAbility(3);
+        break;
+    default:
+        break;
+    }
+
+    AttackCooldownRemaining = 2.f; // Cooldown 2 seconds
+    UE_LOG(LogTemp, Log, TEXT("Companion attacked enemy: %s"), *NearestEnemy->GetName());
+}
+

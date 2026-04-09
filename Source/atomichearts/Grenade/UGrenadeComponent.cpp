@@ -2,6 +2,9 @@
 
 #include "UGrenadeComponent.h"
 #include "Grenade/AGrenadeProjectile.h"
+#include "Grenade/ImpactGrenadeProjectile.h"
+#include "Grenade/PulseGrenadeProjectile.h"
+#include "Grenade/SolarGrenadeProjectile.h"
 #include "GameFramework/Actor.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Components/SphereComponent.h"
@@ -82,8 +85,27 @@ AGrenadeProjectile* UGrenadeComponent::SpawnProjectile(const FVector& Location, 
 	SpawnParams.Owner = GetOwner();
 	SpawnParams.Instigator = Cast<APawn>(GetOwner());
 	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButDontSpawnIfColliding;
+
+	TSubclassOf<AGrenadeProjectile> ProjectileClass = AGrenadeProjectile::StaticClass();
 	
-	AGrenadeProjectile* Projectile = World->SpawnActor<AGrenadeProjectile>(AGrenadeProjectile::StaticClass(), Location, Rotation, SpawnParams);
+	switch (GrenadeType)
+	{
+	case EAbilityType::ImpactGrenade:
+		ProjectileClass = AImpactGrenadeProjectile::StaticClass();
+		break;
+	case EAbilityType::PulseGrenade:
+		ProjectileClass = APulseGrenadeProjectile::StaticClass();
+		break;
+	case EAbilityType::SolarGrenade:
+		ProjectileClass = ASolarGrenadeProjectile::StaticClass();
+		break;
+	default:
+		// Fallback to base class, but log warning
+		UE_LOG(LogTemp, Warning, TEXT("Unknown grenade type %d, using base projectile"), (uint8)GrenadeType);
+		break;
+	}
+	
+	AGrenadeProjectile* Projectile = World->SpawnActor<AGrenadeProjectile>(ProjectileClass, Location, Rotation, SpawnParams);
 	return Projectile;
 }
 
