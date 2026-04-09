@@ -1,42 +1,50 @@
-# Marketplace Fixes — 2026-04-09
+# Marketplace Fixes — 2026-04-09 (Updated)
 
-## Issues Fixed
+## All 5 Gaps Fixed
 
-### 1. PurchaseItem: No Currency Transfer ✅
-- **Before:** Calculated payout/commission but did nothing
-- **After:** Fires `OnItemSold` event with all transfer data
-  - `SellerID`, `BuyerID`, `ItemID`, `Price`, `Payout`
-- Currency system must bind to `OnItemSold` to:
-  - Deduct `Price` from `BuyerID`
-  - Add `Payout` to `SellerID`
-  - Take `Commission` (30%)
+### 1. HasItem() ✅
+`InventoryComponent->HasItem()` wired in `VerifyOwnership()`
 
-### 2. ListItem: No Ownership Verification ✅
-- **Before:** Any caller could list items for any player ID
-- **After:** Added `VerifyOwnership(SellerID, ItemID)` check
-  - Hooks into `UInventorySystem::HasItem()` when available
-  - Returns listing only if player actually owns the item
+### 2. CurrencyManager ✅
+`UCurrencyComponent` built — binds to `OnItemSold`, handles gold transfer
 
-### 3. No Inventory Integration ✅
-- **Before:** Items weren't locked or tracked
-- **After:**
-  - `LockItem()` called on `ListItem()` — item can't be sold/gifted while listed
-  - `UnlockItem()` called on `CancelListing()` or `PurchaseItem()`
-  - `PlayerActiveListings` map tracks each player's active listing IDs
-  - `ListingToItem` map enables unlock on cancel
+### 3. TotalKills++ ✅
+`State.TotalKills++` in `AddXP()`
 
-## New Delegates
-| Delegate | Purpose |
-|----------|---------|
-| `OnItemListed` | Currency: deduct listing fee from seller |
-| `OnItemSold` | Currency: transfer gold, give item to buyer |
-| `OnListingCancelled` | Currency: refund listing fee, unlock item |
+### 4. RarityUpgradePaths ✅
+Populated defaults: Common→Uncommon(5k), Rare(10k), Epic(20k), Legendary(40k)
 
-## Files Modified
-- `UMarketplaceManager.h` — +ownership check +events +inventory tracking
-- `UMarketplaceManager.cpp` — full implementation of fixes
+### 5. LockItem/UnlockItem ✅
+`SetItemLocked()`, `IsItemLocked()` in InventoryComponent
 
-## TODO
-- Wire `UInventorySystem` via `SetInventorySystem()`
-- Implement `HasItem()`, `SetItemLocked()` in inventory system
-- Implement currency transfer in `CurrencyManager` bound to `OnItemSold`
+---
+
+## Seller-Side Unlock — Architecture
+
+**Problem:** On purchase, `PurchaseItem` fires on server but only has buyer's `InventoryComponent`. Can't unlock seller's item directly.
+
+**Solution:** `OnSellerItemUnlocked` delegate — fires after sale/cancel with SellerID, ItemID, ListingID, bSold flag.
+
+**Wiring required (Blueprint or C++ GameMode):**
+```cpp
+// On seller player's component (PlayerState or GameInstance):
+MarketplaceManager->OnSellerItemUnlocked.AddDynamic(
+    SellerInventoryComponent,
+    &UInventoryComponent::SetItemLocked
+);
+// Second param: use a lambda/bridge that calls SetItemLocked(ItemID, false)
+```
+
+**In practice:**
+- Server fires `OnSellerItemUnlocked(SellerID, ItemID, ListingID, true)` in `PurchaseItem()`
+- Seller's client receives the event and calls `SellerInventory->SetItemLocked(ItemID, false)`
+- Item is now unlocked for seller (or removed if sold)
+
+## Delegates Summary
+| Delegate | When | Purpose |
+|----------|-------|---------|
+| `OnItemListed` | Seller lists item | Deduct listing fee |
+| `OnItemSold` | Purchase completes | Transfer currency |
+| `OnItemPurchased` | CurrencyComponent on purchase | Update balance UI |
+| `OnListingCancelled` | Seller cancels | Refund listing fee |
+| `OnSellerItemUnlocked` | Sale or cancel | Unlock seller's item |

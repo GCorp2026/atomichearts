@@ -123,14 +123,13 @@ bool UMarketplaceManager::PurchaseItem(FGuid ListingID, int64 BuyerID) {
     //   - Deduct Price from BuyerID
     //   - Add Payout to SellerID
     //   - Take Commission (goes to platform/protocol)
-    OnItemSold.Broadcast(Listing->SellerID, BuyerID, Listing->ItemID, Listing->Price, Payout);
+    OnItemSold.Broadcast(Listing->SellerID, BuyerID, Listing->ItemID, Listing->Price, Payout, Commission);
     UE_LOG(LogTemp, Log,
         TEXT("Purchase: ListingID=%s Price=%d Buyer=%lld Seller=%lld Payout=%d Commission=%d"),
         *ListingID.ToString(), Listing->Price, BuyerID, Listing->SellerID, Payout, Commission);
 
-    // FIX #3: Unlock item from seller's inventory, assign to buyer
-    UnlockItem(Listing->SellerID, Listing->ItemID);
-    // Buyer receives item — inventory system should bind to OnItemSold and add item to buyer
+    // Notify seller client to unlock their item from their inventory
+    OnSellerItemUnlocked.Broadcast(Listing->SellerID, Listing->ItemID, Listing->ListingID, true);
 
     // Remove listing
     if (auto* Set = PlayerActiveListings.Find(Listing->SellerID)) {
@@ -148,8 +147,8 @@ bool UMarketplaceManager::CancelListing(FGuid ListingID) {
             int64 SellerID = Listings[i].SellerID;
             FString ItemID = Listings[i].ItemID;
 
-            // FIX #3: Unlock the item
-            UnlockItem(SellerID, ItemID);
+            // Notify seller client to unlock their item
+            OnSellerItemUnlocked.Broadcast(SellerID, ItemID, ListingID, false);
             OnListingCancelled.Broadcast(SellerID, ListingID, ItemID);
 
             if (auto* Set = PlayerActiveListings.Find(SellerID)) {

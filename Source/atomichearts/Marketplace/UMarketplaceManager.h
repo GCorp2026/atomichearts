@@ -6,7 +6,8 @@
 class UInventoryComponent;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_FourParams(FOnItemListed, int64, SellerID, const FString&, ItemID, FGuid, ListingID, int32, Price);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_FiveParams(FOnItemSold, int64, SellerID, int64, BuyerID, const FString&, ItemID, int32, Price, int32, Payout);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_SixParams(FOnItemSold, int64, SellerID, int64, BuyerID, const FString&, ItemID, int32, Price, int32, Payout, int32, Commission);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_FiveParams(FOnSellerItemUnlocked, int64, SellerID, const FString&, ItemID, FGuid, ListingID, bool, bSold);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnListingCancelled, int64, SellerID, FGuid, ListingID, const FString&, ItemID);
 
 UCLASS(BlueprintType)
@@ -30,6 +31,10 @@ public:
 
     UPROPERTY(BlueprintAssignable)
     FOnListingCancelled OnListingCancelled;
+
+    /** Fired on seller client: unlock their item (bSold=true if sold, false if cancelled) */
+    UPROPERTY(BlueprintAssignable)
+    FOnSellerItemUnlocked OnSellerItemUnlocked;
 
     /** List an item for sale. Verifies ownership via inventory. */
     UFUNCTION(BlueprintCallable)
