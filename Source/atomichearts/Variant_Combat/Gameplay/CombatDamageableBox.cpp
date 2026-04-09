@@ -73,11 +73,25 @@ void ACombatDamageableBox::HandleDeath()
 
 void ACombatDamageableBox::ApplyHealing(float Healing, AActor* Healer)
 {
-	// stub
+	if (Healing <= 0.0f) return;
+
+	// Don't heal a dead box
+	if (CurrentHP <= 0.0f) return;
+
+	float OldHP = CurrentHP;
+	CurrentHP += Healing;
+
+	UE_LOG(LogTemp, Log, TEXT("ACombatDamageableBox::ApplyHealing: Healing %.1f from %s, health changed from %.1f to %.1f"), 
+		Healing, Healer ? *Healer->GetName() : TEXT("None"), OldHP, CurrentHP);
 }
 
 void ACombatDamageableBox::NotifyDanger(const FVector& DangerLocation, AActor* DangerSource)
 {
-	// stub
+	// Log danger event
+	UE_LOG(LogTemp, Log, TEXT("ACombatDamageableBox::NotifyDanger: Danger at %s from %s"), 
+		*DangerLocation.ToString(), DangerSource ? *DangerSource->GetName() : TEXT("None"));
+
+	// Optionally trigger visual/sound effects via blueprint
+	// (No blueprint event currently defined for danger)
 }
 
