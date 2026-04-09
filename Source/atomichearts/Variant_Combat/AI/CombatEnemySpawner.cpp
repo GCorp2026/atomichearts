@@ -102,7 +102,24 @@ void ACombatEnemySpawner::SpawnerDepleted()
 
 void ACombatEnemySpawner::ToggleInteraction(AActor* ActivationInstigator)
 {
-	// stub
+	FTimerManager& TimerManager = GetWorld()->GetTimerManager();
+	bool bIsTimerActive = TimerManager.IsTimerActive(SpawnTimer);
+	
+	if (bIsTimerActive || bHasBeenActivated)
+	{
+		// Deactivate spawning
+		TimerManager.ClearTimer(SpawnTimer);
+		bHasBeenActivated = false;
+		UE_LOG(LogTemp, Log, TEXT("ACombatEnemySpawner::ToggleInteraction: Spawner deactivated by %s"), 
+			ActivationInstigator ? *ActivationInstigator->GetName() : TEXT("None"));
+	}
+	else
+	{
+		// Activate spawning if we haven't already started
+		ActivateInteraction(ActivationInstigator);
+		UE_LOG(LogTemp, Log, TEXT("ACombatEnemySpawner::ToggleInteraction: Spawner activated by %s"), 
+			ActivationInstigator ? *ActivationInstigator->GetName() : TEXT("None"));
+	}
 }
 
 void ACombatEnemySpawner::ActivateInteraction(AActor* ActivationInstigator)
@@ -122,5 +139,9 @@ void ACombatEnemySpawner::ActivateInteraction(AActor* ActivationInstigator)
 
 void ACombatEnemySpawner::DeactivateInteraction(AActor* ActivationInstigator)
 {
-	// stub
+	FTimerManager& TimerManager = GetWorld()->GetTimerManager();
+	TimerManager.ClearTimer(SpawnTimer);
+	bHasBeenActivated = false;
+	UE_LOG(LogTemp, Log, TEXT("ACombatEnemySpawner::DeactivateInteraction: Spawner deactivated by %s"), 
+		ActivationInstigator ? *ActivationInstigator->GetName() : TEXT("None"));
 }

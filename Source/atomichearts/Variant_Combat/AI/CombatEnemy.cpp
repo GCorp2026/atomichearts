@@ -252,7 +252,22 @@ void ACombatEnemy::HandleDeath()
 
 void ACombatEnemy::ApplyHealing(float Healing, AActor* Healer)
 {
-	// stub
+	if (Healing <= 0.0f) return;
+	
+	// Don't heal dead enemies
+	if (CurrentHP <= 0.0f) return;
+	
+	float OldHP = CurrentHP;
+	CurrentHP = FMath::Min(CurrentHP + Healing, MaxHP);
+	
+	// Update life bar
+	if (LifeBarWidget)
+	{
+		LifeBarWidget->SetLifePercentage(CurrentHP / MaxHP);
+	}
+	
+	UE_LOG(LogTemp, Log, TEXT("ACombatEnemy::ApplyHealing: Healing %.1f from %s, health changed from %.1f to %.1f (Max %.1f)"), 
+		Healing, Healer ? *Healer->GetName() : TEXT("None"), OldHP, CurrentHP, MaxHP);
 }
 
 void ACombatEnemy::NotifyDanger(const FVector& DangerLocation, AActor* DangerSource)

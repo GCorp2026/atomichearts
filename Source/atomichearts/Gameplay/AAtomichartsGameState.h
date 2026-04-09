@@ -44,6 +44,19 @@ public:
     UPROPERTY(BlueprintReadOnly, Category = "Marketplace")
     TObjectPtr<UMarketplaceManager> MarketplaceManager;
 
+    // House Account for marketplace commission
+    UPROPERTY(Replicated, BlueprintReadOnly, Category = "Marketplace")
+    int32 HouseBalance = 0;
+
+    UFUNCTION(BlueprintCallable, Category = "Marketplace")
+    int32 GetHouseBalance() const { return HouseBalance; }
+
+    UFUNCTION(BlueprintCallable, Category = "Marketplace")
+    void AddHouseBalance(int32 Amount);
+
+    UFUNCTION(BlueprintCallable, Category = "Marketplace")
+    bool WithdrawHouseBalance(int32 Amount);
+
     UFUNCTION(BlueprintCallable, Category = "Marketplace")
     UMarketplaceManager* GetMarketplaceManager() const { return MarketplaceManager; }
     void StartMatch();
@@ -61,8 +74,13 @@ public:
     int32 GetLeadingTeam() const;
 
 protected:
+    virtual void BeginPlay() override;
     UFUNCTION()
     void OnRep_MatchState();
+
+    void BindMarketplaceEvents();
+    UFUNCTION()
+    void OnMarketplaceItemSold(int64 SellerID, int64 BuyerID, const FString& ItemID, int32 Price, int32 Payout, int32 Commission);
 
     FTimerHandle MatchTimerHandle;
 

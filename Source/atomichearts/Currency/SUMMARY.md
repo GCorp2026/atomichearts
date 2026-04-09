@@ -64,5 +64,5 @@ CurrencyComponent->SetMarketplaceManager(MarketplaceManager);
 - [x] Fix OwnerPlayerID = 0 hardcoded
 - [x] Fix Marketplace pointer never assigned
 - [x] Fix OnItemPurchased broadcasts to all players
-- [ ] Call `SetOwnerPlayerID()` from PlayerState on player login
-- [ ] Call `SetMarketplaceManager()` from GameMode/GameInstance
+- [x] Call `SetOwnerPlayerID()` from PlayerState on player login
+- [x] Call `SetMarketplaceManager()` from GameMode/GameInstance

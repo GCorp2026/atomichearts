@@ -17,6 +17,7 @@ void AAtomichartsGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>
     DOREPLIFETIME(AAtomichartsGameState, RedTeamScore);
     DOREPLIFETIME(AAtomichartsGameState, BlueTeamScore);
     DOREPLIFETIME(AAtomichartsGameState, MatchTimeRemaining);
+    DOREPLIFETIME(AAtomichartsGameState, HouseBalance);
 }
 
 void AAtomichartsGameState::StartMatch()
@@ -88,4 +89,50 @@ int32 AAtomichartsGameState::GetLeadingTeam() const
 void AAtomichartsGameState::OnRep_MatchState()
 {
     // Client-side handling if needed
+}
+
+void AAtomichartsGameState::BeginPlay()
+{
+    Super::BeginPlay();
+    BindMarketplaceEvents();
+}
+
+void AAtomichartsGameState::BindMarketplaceEvents()
+{
+    if (MarketplaceManager)
+    {
+        MarketplaceManager->OnItemSold.AddDynamic(this, &AAtomichartsGameState::OnMarketplaceItemSold);
+        UE_LOG(LogTemp, Log, TEXT("GameState: Bound to Marketplace OnItemSold"));
+    }
+    else
+    {
+        UE_LOG(LogTemp, Warning, TEXT("GameState: MarketplaceManager is null, cannot bind events"));
+    }
+}
+
+void AAtomichartsGameState::OnMarketplaceItemSold(int64 SellerID, int64 BuyerID, const FString& ItemID, int32 Price, int32 Payout, int32 Commission)
+{
+    // Only server should process commission
+    if (!HasAuthority()) return;
+    // Add commission to house balance
+    AddHouseBalance(Commission);
+    UE_LOG(LogTemp, Log, TEXT("House account: +%d commission from sale of %s (Price=%d, Payout=%d). New balance: %d"), Commission, *ItemID, Price, Payout, HouseBalance);
+}
+
+void AAtomichartsGameState::AddHouseBalance(int32 Amount)
+{
+    if (!HasAuthority()) return;
+    if (Amount <= 0) return;
+    HouseBalance += Amount;
+    UE_LOG(LogTemp, Log, TEXT("House account: +%d added. New balance: %d"), Amount, HouseBalance);
+    // Could broadcast a delegate here if needed
+}
+
+bool AAtomichartsGameState::WithdrawHouseBalance(int32 Amount)
+{
+    if (!HasAuthority()) return false;
+    if (Amount <= 0 || Amount > HouseBalance) return false;
+    HouseBalance -= Amount;
+    UE_LOG(LogTemp, Log, TEXT("House account: -%d withdrawn. New balance: %d"), Amount, HouseBalance);
+    return true;
 }
