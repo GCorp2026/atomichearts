@@ -1,5 +1,5 @@
 #include "Marketplace/UMarketplaceManager.h"
-#include "InventorySystem.h" // forward-declare when available
+#include "Inventory/InventoryComponent.h"
 #include "Kismet/KismetMathLibrary.h"
 
 FGuid UMarketplaceManager::GenerateListingID() const {
@@ -39,21 +39,35 @@ const FMarketListing* UMarketplaceManager::FindListing(FGuid ListingID) const {
 }
 
 bool UMarketplaceManager::VerifyOwnership(int64 SellerID, const FString& ItemID) const {
-    // If no inventory system injected, assume ownership is valid
-    if (!InventorySystem) return true;
-    // Otherwise call into inventory to verify the player owns this item
-    // return InventorySystem->HasItem(SellerID, ItemID);
-    return true; // TODO: wire to actual inventory
+    // If no inventory component injected, assume ownership is valid
+    if (!InventoryComponent) return true;
+    // Verify this inventory belongs to the seller and has the item
+    if (InventoryComponent->GetOwnerPlayerID() != SellerID) {
+        UE_LOG(LogTemp, Warning, TEXT("VerifyOwnership: Inventory OwnerID=%lld doesn't match SellerID=%lld"),
+               InventoryComponent->GetOwnerPlayerID(), SellerID);
+        return false;
+    }
+    return InventoryComponent->HasItem(ItemID);
 }
 
 void UMarketplaceManager::LockItem(int64 SellerID, const FString& ItemID) {
-    if (!InventorySystem) return;
-    // InventorySystem->SetItemLocked(SellerID, ItemID, true);
+    if (!InventoryComponent) return;
+    if (InventoryComponent->GetOwnerPlayerID() != SellerID) {
+        UE_LOG(LogTemp, Warning, TEXT("LockItem: Inventory OwnerID=%lld doesn't match SellerID=%lld"),
+               InventoryComponent->GetOwnerPlayerID(), SellerID);
+        return;
+    }
+    InventoryComponent->SetItemLocked(ItemID, true);
 }
 
 void UMarketplaceManager::UnlockItem(int64 SellerID, const FString& ItemID) {
-    if (!InventorySystem) return;
-    // InventorySystem->SetItemLocked(SellerID, ItemID, false);
+    if (!InventoryComponent) return;
+    if (InventoryComponent->GetOwnerPlayerID() != SellerID) {
+        UE_LOG(LogTemp, Warning, TEXT("UnlockItem: Inventory OwnerID=%lld doesn't match SellerID=%lld"),
+               InventoryComponent->GetOwnerPlayerID(), SellerID);
+        return;
+    }
+    InventoryComponent->SetItemLocked(ItemID, false);
 }
 
 bool UMarketplaceManager::CanListItem(int64 SellerID) const {

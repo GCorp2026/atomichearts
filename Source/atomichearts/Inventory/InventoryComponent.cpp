@@ -158,3 +158,23 @@ bool UInventoryComponent::SpendShards(int32 Amount)
 	}
 	return true;
 }
+
+bool UInventoryComponent::SetItemLocked(const FString& ItemId, bool bLocked)
+{
+    if (!HasItem(ItemId))
+        return false;
+
+    if (bLocked)
+        LockedItemIds.Add(ItemId);
+    else
+        LockedItemIds.Remove(ItemId);
+
+    UE_LOG(LogTemp, Log, TEXT("SetItemLocked: Item=%s Locked=%d Owner=%lld"),
+           *ItemId, bLocked, OwnerPlayerID);
+    return true;
+}
+
+bool UInventoryComponent::IsItemLocked(const FString& ItemId) const
+{
+    return LockedItemIds.Contains(ItemId);
+}

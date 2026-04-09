@@ -3,7 +3,7 @@
 #include "FMarketListing.h"
 #include "UMarketplaceManager.generated.h"
 
-class UInventorySystem;
+class UInventoryComponent;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_FourParams(FOnItemListed, int64, SellerID, const FString&, ItemID, FGuid, ListingID, int32, Price);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_FiveParams(FOnItemSold, int64, SellerID, int64, BuyerID, const FString&, ItemID, int32, Price, int32, Payout);
@@ -18,8 +18,8 @@ public:
     static constexpr int32 MAX_LISTINGS_PER_PLAYER = 20;
     static constexpr int64 RELIST_COOLDOWN_SECONDS = 86400;
 
-    /** Inject inventory system for ownership checks */
-    void SetInventorySystem(UInventorySystem* Inventory) { InventorySystem = Inventory; }
+    /** Inject inventory component for ownership checks */
+    void SetInventoryComponent(UInventoryComponent* Inventory) { InventoryComponent = Inventory; }
 
     /** Events for external systems (currency, inventory) to bind to */
     UPROPERTY(BlueprintAssignable)
@@ -80,7 +80,8 @@ private:
     UPROPERTY()
     TMap<int64, TSet<FGuid>> PlayerActiveListings;
 
-    UObject* InventorySystem = nullptr;
+    UPROPERTY()
+    UInventoryComponent* InventoryComponent = nullptr;
 
     bool VerifyOwnership(int64 SellerID, const FString& ItemID) const;
     void LockItem(int64 SellerID, const FString& ItemID);

@@ -52,7 +52,16 @@ public:
 	int32 GetShards() const { return Shards; }
 
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
-	bool HasItem(const FString& ItemId) const;
+	bool SetItemLocked(const FString& ItemId, bool bLocked);
+
+	UFUNCTION(BlueprintCallable, Category = "Inventory")
+	bool IsItemLocked(const FString& ItemId) const;
+
+	UFUNCTION(BlueprintCallable, Category = "Inventory")
+	void SetOwnerPlayerID(int64 PlayerID) { OwnerPlayerID = PlayerID; }
+
+	UFUNCTION(BlueprintPure, Category = "Inventory")
+	int64 GetOwnerPlayerID() const { return OwnerPlayerID; }
 
 public:
 	UPROPERTY(BlueprintAssignable, Category = "Inventory")
@@ -73,4 +82,12 @@ protected:
 
 	UPROPERTY(Replicated)
 	TArray<FString> OwnedItemIds;
+
+	/** Player ID this inventory belongs to */
+	UPROPERTY(Replicated)
+	int64 OwnerPlayerID = 0;
+
+	/** Items locked for marketplace transactions */
+	UPROPERTY(Replicated)
+	TSet<FString> LockedItemIds;
 };
