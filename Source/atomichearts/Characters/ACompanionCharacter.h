@@ -8,6 +8,7 @@
 #include "CompanionCharacter.generated.h"
 
 class AAtomicheartsCharacter;
+class USphereComponent;
 
 /**
  * ECompanionState - AI behavior state for companions
@@ -152,4 +153,23 @@ private:
     // Timers
     FTimerHandle FollowTimerHandle;
     FTimerHandle CombatTimerHandle;
+    FTimerHandle AIEvaluationTimerHandle;
+
+    // AI Detection
+    UPROPERTY(VisibleAnywhere)
+    USphereComponent* DetectionSphere;
+
+    UPROPERTY()
+    TArray<AActor*> DetectedEnemies;
+
+    // Cooldowns
+    float BuffCooldownRemaining;
+    float AttackCooldownRemaining;
+
+    // AI Evaluation
+    void EvaluateState();
+    void CastBuff();
+    void PerformAttack();
+    void OnDetectionSphereBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+    void OnDetectionSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 };

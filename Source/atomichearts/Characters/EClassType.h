@@ -61,6 +61,8 @@ enum class EAbilityType : uint8
 	// Solaris Warden
 	HealingRift,
 	SolarGrenade,
+	ImpactGrenade,
+	PulseGrenade,
 	Revival,
 	SolarFlare
 };

@@ -5,6 +5,7 @@
 #include "GameplayAbility.h"
 #include "AbilitySystemComponent.h"
 #include "AAtomichartsCharacter.h"
+#include "Grenade/UGrenadeComponent.h"
 
 UClassAbilityComponent::UClassAbilityComponent()
 {
@@ -132,10 +133,38 @@ bool UClassAbilityComponent::ActivateAbility(int32 SlotIndex)
 	if (!Owner)
 		return false;
 
-	// Notify character to play animation / spawn effects
-	if (AAAtomichartsCharacter* Char = Cast<AAAtomichartsCharacter>(Owner))
+	// Check if ability is a grenade type
+	bool bIsGrenade = false;
+	if (Def.AbilityType == EAbilityType::SolarGrenade ||
+		Def.AbilityType == EAbilityType::ImpactGrenade ||
+		Def.AbilityType == EAbilityType::PulseGrenade)
 	{
-		Char->OnAbilityActivated(Def.AbilityType);
+		bIsGrenade = true;
+	}
+
+	if (bIsGrenade)
+	{
+		// Find or create grenade component
+		UGrenadeComponent* GrenadeComp = Owner->FindComponentByClass<UGrenadeComponent>();
+		if (!GrenadeComp)
+		{
+			GrenadeComp = NewObject<UGrenadeComponent>(Owner);
+			GrenadeComp->RegisterComponent();
+			UE_LOG(LogTemp, Log, TEXT("Created UGrenadeComponent on actor"));
+		}
+		// Set grenade type and throw
+		GrenadeComp->SetGrenadeType(Def.AbilityType);
+		GrenadeComp->SetCooldown(Def.Cooldown);
+		GrenadeComp->ThrowGrenade();
+		UE_LOG(LogTemp, Log, TEXT("Grenade ability activated: %d"), (uint8)Def.AbilityType);
+	}
+	else
+	{
+		// Notify character to play animation / spawn effects (original behavior)
+		if (AAAtomichartsCharacter* Char = Cast<AAAtomichartsCharacter>(Owner))
+		{
+			Char->OnAbilityActivated(Def.AbilityType);
+		}
 	}
 
 	StartCooldown(SlotIndex, Def.Cooldown);
