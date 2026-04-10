@@ -6,11 +6,34 @@
 #include "TimerManager.h"
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/PlayerController.h"
+#include "Net/UnrealNetwork.h"
 
 AStrikeGameMode::AStrikeGameMode()
 {
     // Default values can be set in header properties
     bDelayedStart = true;
+}
+
+void AStrikeGameMode::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+    Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+    DOREPLIFETIME(AStrikeGameMode, CurrentWave);
+    DOREPLIFETIME(AStrikeGameMode, EnemiesRemaining);
+    DOREPLIFETIME(AStrikeGameMode, WaveState);
+}
+
+void AStrikeGameMode::PreLogin(const FString& Options, const FString& Address, const FUniqueNetIdRepl& UniqueId, FString& ErrorMessage)
+{
+    // Enforce maximum player count for Strike mode
+    int32 CurrentPlayers = GetNumPlayers();
+    if (CurrentPlayers >= MaxStrikePlayers)
+    {
+        ErrorMessage = TEXT("Strike game is full (max " + FString::FromInt(MaxStrikePlayers) + " players).");
+        return;
+    }
+
+    // Optional: enforce minimum players for match start (handled elsewhere)
+    Super::PreLogin(Options, Address, UniqueId, ErrorMessage);
 }
 
 void AStrikeGameMode::BeginPlay()
@@ -85,7 +108,19 @@ void AStrikeGameMode::SpawnWaveEnemies()
     if (CurrentWave == 1)
     {
         // First wave might have fewer enemies (optional)
-        // NumEnemies = FMath::Max(EnemiesPerWave / 2, 1);
+        NumEnemies = FMath::Max(EnemiesPerWave / 2, 1);
+    }
+
+    // Check for empty spawn arrays
+    if (EnemyClasses.Num() == 0)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Strike: No enemy classes defined! Cannot spawn enemies."));
+        return;
+    }
+    if (SpawnPoints.Num() == 0)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Strike: No spawn points defined! Cannot spawn enemies."));
+        return;
     }
 
     // Spawn enemies
@@ -111,6 +146,10 @@ void AStrikeGameMode::SpawnWaveEnemies()
                 BindEnemyDelegates(Enemy);
             }
         }
+        else
+        {
+            UE_LOG(LogTemp, Warning, TEXT("Strike: Failed to get enemy class or spawn point for enemy %d/%d"), i + 1, NumEnemies);
+        }
     }
 
     EnemiesRemaining = SpawnedEnemies.Num();
@@ -119,10 +158,11 @@ void AStrikeGameMode::SpawnWaveEnemies()
 
 void AStrikeGameMode::OnEnemyDied()
 {
+    // Prevent negative EnemiesRemaining (race condition guard)
     if (EnemiesRemaining <= 0)
         return;
 
-    EnemiesRemaining--;
+    EnemiesRemaining = FMath::Max(0, EnemiesRemaining - 1);
     UE_LOG(LogTemp, Log, TEXT("Strike: Enemy died, %d remaining"), EnemiesRemaining);
 
     UpdateHUD();

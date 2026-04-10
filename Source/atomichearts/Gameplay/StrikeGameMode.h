@@ -16,7 +16,7 @@ enum class EWaveState : uint8
 class UStrikeHUDWidget;
 
 /**
- * Game Mode for cooperative PvE Strikes (wave‑based enemy spawning).
+ * Game Mode for cooperative PvE Strikes (wave-based enemy spawning).
  */
 UCLASS()
 class ATOMICHEARTS_API AStrikeGameMode : public AAtomichartsGameMode
@@ -30,18 +30,27 @@ protected:
     virtual void BeginPlay() override;
     virtual void StartMatch() override;
     virtual void EndMatch() override;
+    virtual void PreLogin(const FString& Options, const FString& Address, const FUniqueNetIdRepl& UniqueId, FString& ErrorMessage) override;
 
 public:
     /** Total number of waves (configurable) */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Strike|Waves", meta = (ClampMin = 1, ClampMax = 20))
     int32 TotalWaves = 5;
 
-    /** Current wave index (1‑based) */
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Strike|Waves")
+    /** Maximum players allowed in Strike mode */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Strike|Players", meta = (ClampMin = 1, ClampMax = 4))
+    int32 MaxStrikePlayers = 4;
+
+    /** Minimum players required to start match */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Strike|Players", meta = (ClampMin = 1, ClampMax = 4))
+    int32 MinStrikePlayers = 1;
+
+    /** Current wave index (1‐based) */
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Strike|Waves", Replicated, ReplicatedUsing = OnRep_CurrentWave)
     int32 CurrentWave = 0;
 
     /** Number of enemies still alive in the current wave */
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Strike|Waves")
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Strike|Waves", Replicated, ReplicatedUsing = OnRep_EnemiesRemaining)
     int32 EnemiesRemaining = 0;
 
     /** Delay before starting the next wave (seconds) */
@@ -49,7 +58,7 @@ public:
     float WaveStartDelay = 5.0f;
 
     /** Current state of the wave */
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Strike|Waves")
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Strike|Waves", Replicated, ReplicatedUsing = OnRep_WaveState)
     EWaveState WaveState = EWaveState::Preparing;
 
     /** Spawn points for enemies (can be set in editor) */
@@ -95,6 +104,12 @@ public:
     /** Override to identify as Strike mode */
     virtual bool IsStrikeMode() const override { return true; }
 
+    /** Replication of wave state variables */
+    virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+    /** Player count enforcement for Strike mode */
+    virtual FString PreLogin(const FString& Options, const FString& Address, const FUniqueNetIdRepl& UniqueId, FString& ErrorMessage) override;
+
     /** Update HUD for all players */
     void UpdateHUD();
 
@@ -128,4 +143,16 @@ protected:
 
     /** Remove HUD widgets */
     void RemoveHUD();
+
+    /** Called when CurrentWave is replicated */
+    UFUNCTION()
+    void OnRep_CurrentWave();
+
+    /** Called when EnemiesRemaining is replicated */
+    UFUNCTION()
+    void OnRep_EnemiesRemaining();
+
+    /** Called when WaveState is replicated */
+    UFUNCTION()
+    void OnRep_WaveState();
 };
