@@ -5,6 +5,9 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "CombatDamageable.h"
+#include "AbilitySystemInterface.h"
+#include "AbilitySystemComponent.h"
+#include "GameplayEffect.h"
 #include "HealthRegenComponent.generated.h"
 
 /**
@@ -47,6 +50,8 @@ public:
 private:
     void ApplyRegen(float DeltaTime);
     void OnDamageTaken(float Damage, AActor* DamageCauser);
+    UAbilitySystemComponent* GetOwnerASC() const;
+    void ApplyGASHealing(float RegenAmount);
 
 private:
     // Rate of health regeneration (health per second)
