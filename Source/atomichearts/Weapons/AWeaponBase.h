@@ -5,6 +5,8 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "AtomicheartsWeaponTypes.h"
+#include "AbilitySystemInterface.h"
+#include "GameplayEffect.h"
 #include "AWeaponBase.generated.h"
 
 class USoundCue;
@@ -136,6 +138,8 @@ protected:
 	virtual bool TraceHit(const FVector& Start, const FVector& End, FHitResult& OutHit);
 	void SpendRound();
 	void PlayFireEffects(const FVector& MuzzleLocation, const FVector& HitLocation);
+	UAbilitySystemComponent* GetOwnerASC() const;
+	void ApplyAmmoConsumptionGAS();
 
 	UFUNCTION()
 	virtual void OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,

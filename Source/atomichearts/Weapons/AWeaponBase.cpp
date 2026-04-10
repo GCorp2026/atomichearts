@@ -10,6 +10,8 @@
 #include "Net/UnrealNetwork.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/PlayerController.h"
+#include "AbilitySystemComponent.h"
+#include "GameplayEffects/AmmoConsumptionEffect.h"
 
 AAWeaponBase::AAWeaponBase()
 {
@@ -232,10 +234,34 @@ bool AAWeaponBase::TraceHit(const FVector& Start, const FVector& End, FHitResult
 void AAWeaponBase::SpendRound()
 {
 	CurrentAmmo = FMath::Clamp(CurrentAmmo - 1, 0, MagazineSize);
+	ApplyAmmoConsumptionGAS();
 
 	if (IsMagEmpty() && EmptyMagSound)
 	{
 		UGameplayStatics::PlaySoundAtLocation(this, EmptyMagSound, GetActorLocation());
+	}
+}
+
+UAbilitySystemComponent* AAWeaponBase::GetOwnerASC() const
+{
+	AActor* Owner = GetOwner();
+	if (!Owner) return nullptr;
+	IAbilitySystemInterface* ASI = Cast<IAbilitySystemInterface>(Owner);
+	if (!ASI) return nullptr;
+	return ASI->GetAbilitySystemComponent();
+}
+
+void AAWeaponBase::ApplyAmmoConsumptionGAS()
+{
+	UAbilitySystemComponent* ASC = GetOwnerASC();
+	if (!ASC) return;
+
+	FGameplayEffectContextHandle Context = ASC->MakeEffectContext();
+	Context.AddSourceObject(this);
+	FGameplayEffectSpecHandle Spec = ASC->MakeOutgoingSpec(UAmmoConsumptionEffect::StaticClass(), 1.0f, Context);
+	if (Spec.IsValid())
+	{
+		ASC->ApplyGameplayEffectSpecToSelf(*Spec.Data);
 	}
 }
 
