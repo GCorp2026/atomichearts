@@ -5,6 +5,8 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "EClassType.h"
+#include "AbilitySystemInterface.h"
+#include "GameplayEffect.h"
 #include "UGrenadeComponent.generated.h"
 
 class AGrenadeProjectile;
@@ -42,7 +44,7 @@ public:
 
 	/** Check if grenade is ready to throw */
 	UFUNCTION(BlueprintPure)
-	bool IsReady() const { return CooldownRemaining <= 0.f; }
+	bool IsReady() const;
 
 protected:
 	virtual void BeginPlay() override;
@@ -77,4 +79,11 @@ private:
 
 	/** Current cooldown remaining */
 	float CooldownRemaining = 0.f;
+
+	/** Gameplay Ability System cooldown effect class */
+	UPROPERTY(EditDefaultsOnly, Category = "Grenade|GAS")
+	TSubclassOf<UGameplayEffect> CooldownEffectClass;
+
+	/** Helper to get the owner's Ability System Component */
+	UAbilitySystemComponent* GetOwnerAbilitySystemComponent() const;
 };

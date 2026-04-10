@@ -1,6 +1,8 @@
 // Copyright 2024 Destiny Cyberpunk
 
 #include "UGrenadeComponent.h"
+#include "AbilitySystemComponent.h"
+#include "GameplayEffects/GrenadeCooldownEffect.h"
 #include "Grenade/AGrenadeProjectile.h"
 #include "Grenade/ImpactGrenadeProjectile.h"
 #include "Grenade/PulseGrenadeProjectile.h"
@@ -15,6 +17,37 @@
 UGrenadeComponent::UGrenadeComponent()
 {
 	PrimaryComponentTick.bCanEverTick = true;
+	CooldownEffectClass = UGrenadeCooldownEffect::StaticClass();
+}
+
+UAbilitySystemComponent* UGrenadeComponent::GetOwnerAbilitySystemComponent() const
+{
+    AActor* Owner = GetOwner();
+    if (!Owner) return nullptr;
+    
+    // Check if owner implements IAbilitySystemInterface
+    IAbilitySystemInterface* ASI = Cast<IAbilitySystemInterface>(Owner);
+    if (!ASI) return nullptr;
+    
+    return ASI->GetAbilitySystemComponent();
+}
+
+bool UGrenadeComponent::IsReady() const
+{
+    // First check local cooldown
+    if (CooldownRemaining > 0.f)
+        return false;
+    
+    // Check GAS cooldown effect
+    UAbilitySystemComponent* ASC = GetOwnerAbilitySystemComponent();
+    if (ASC && CooldownEffectClass)
+    {
+        int32 ActiveCount = ASC->GetGameplayEffectCount(CooldownEffectClass);
+        if (ActiveCount > 0)
+            return false;
+    }
+    
+    return true;
 }
 
 void UGrenadeComponent::BeginPlay()
@@ -51,6 +84,19 @@ void UGrenadeComponent::ThrowGrenade()
 		return;
 	}
 
+	// Check GAS cooldown
+	UAbilitySystemComponent* ASC = GetOwnerAbilitySystemComponent();
+	if (ASC && CooldownEffectClass)
+	{
+		// Check if any instance of CooldownEffectClass is active
+		int32 ActiveCount = ASC->GetGameplayEffectCount(CooldownEffectClass);
+		if (ActiveCount > 0)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Grenade on GAS cooldown"));
+			return;
+		}
+	}
+
 	if (!IsReady())
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Grenade on cooldown"));
@@ -77,6 +123,22 @@ void UGrenadeComponent::ThrowGrenade()
 		}
 		
 		CooldownRemaining = Cooldown;
+		
+		// Apply GAS cooldown effect for replication and server validation
+		UAbilitySystemComponent* ASC = GetOwnerAbilitySystemComponent();
+		if (ASC && CooldownEffectClass)
+		{
+			FGameplayEffectContextHandle ContextHandle = ASC->MakeEffectContext();
+			ContextHandle.AddSourceObject(this);
+			FGameplayEffectSpecHandle SpecHandle = ASC->MakeOutgoingSpec(CooldownEffectClass, 1.0f, ContextHandle);
+			if (SpecHandle.IsValid())
+			{
+				// Adjust duration to match cooldown
+				SpecHandle.Data->SetDuration(Cooldown, false);
+				ASC->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data);
+			}
+		}
+		
 		UE_LOG(LogTemp, Log, TEXT("Grenade thrown (Type: %d)"), (uint8)GrenadeType);
 	}
 }

@@ -142,6 +142,13 @@ AAtomichartsCharacter::AAtomichartsCharacter()
     // Create Cyberpunk movement component
     CyberpunkMovement = CreateDefaultSubobject<UAtomicheartsMovementComponent>(TEXT("CyberpunkMovement"));
 
+    // Create Gameplay Ability System components
+    AbilitySystemComponent = CreateDefaultSubobject<UAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
+    AbilitySystemComponent->SetIsReplicated(true);
+    AbilitySystemComponent->SetReplicationMode(EAbilitySystemReplicationMode::Mixed);
+
+    AttributeSet = CreateDefaultSubobject<UAtomicHeartsAttributeSet>(TEXT("AttributeSet"));
+
     // Initialize default faction standings
     FactionStandings.Add(EFaction::Syndicate, 50.f);
     FactionStandings.Add(EFaction::Corporate, 50.f);
@@ -153,6 +160,11 @@ AAtomichartsCharacter::AAtomichartsCharacter()
     WeaponAttachmentSockets.Add(FName("Sidearm"), FName("SidearmSocket"));
     WeaponAttachmentSockets.Add(FName("Melee"), FName("MeleeSocket"));
     WeaponAttachmentSockets.Add(FName("Cyberware"), FName("CyberwareSocket"));
+}
+
+UAbilitySystemComponent* AAtomichartsCharacter::GetAbilitySystemComponent() const
+{
+    return AbilitySystemComponent;
 }
 
 void AAtomichartsCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -170,6 +182,14 @@ void AAtomichartsCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>
 void AAtomichartsCharacter::BeginPlay()
 {
     Super::BeginPlay();
+
+    // Initialize Gameplay Ability System
+    if (AbilitySystemComponent && AttributeSet)
+    {
+        AbilitySystemComponent->InitAbilityActorInfo(this, this);
+        // Register the AttributeSet with the AbilitySystemComponent
+        AbilitySystemComponent->AddAttributeSetSubobject(AttributeSet);
+    }
 
     if (HasAuthority())
     {

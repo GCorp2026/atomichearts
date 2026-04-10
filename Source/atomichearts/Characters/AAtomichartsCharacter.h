@@ -8,6 +8,9 @@
 #include "TimeMageAbilitySet.h"
 #include "Movement/AtomicheartsMovementComponent.h"
 #include "Inputs/InputConfig.h"
+#include "AbilitySystemInterface.h"
+#include "AbilitySystemComponent.h"
+#include "UAtomicHeartsAttributeSet.h"
 #include "AtomicheartsCharacter.generated.h"
 
 class UCurveFloat;
@@ -67,7 +70,7 @@ protected:
 
 /** AAtomichartsCharacter - Main player character with cyberpunk movement */
 UCLASS()
-class ATOMICHEARTS_API AAtomichartsCharacter : public ABlasterCharacter
+class ATOMICHEARTS_API AAtomichartsCharacter : public ABlasterCharacter, public IAbilitySystemInterface
 {
     GENERATED_BODY()
 public:
@@ -98,6 +101,11 @@ public:
     UFUNCTION(BlueprintPure) UClassAbilityComponent* GetClassAbilityComponent() const { return ClassAbilityComponent; }
     UFUNCTION(BlueprintPure) UClassStatsComponent* GetClassStatsComponent() const { return ClassStatsComponent; }
     UFUNCTION(BlueprintPure) UTimeMageAbilitySet* GetTimeMageAbilities() const { return TimeMageAbilities; }
+
+    // Gameplay Ability System (GAS)
+    virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
+    UFUNCTION(BlueprintPure, Category = "GAS")
+    UAtomicHeartsAttributeSet* GetAttributeSet() const { return AttributeSet; }
 
     // Ability activation (called from ability component)
     UFUNCTION(BlueprintCallable) void OnAbilityActivated(EAbilityType AbilityType);
@@ -186,6 +194,12 @@ private:
     UClassAbilityComponent* ClassAbilityComponent;
     UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess = "true"))
     UClassStatsComponent* ClassStatsComponent;
+
+    // Gameplay Ability System (GAS)
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess = "true"))
+    UAbilitySystemComponent* AbilitySystemComponent;
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess = "true"))
+    UAtomicHeartsAttributeSet* AttributeSet;
 
     // Time Mage abilities (crowd control specialist)
     UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess = "true"))
