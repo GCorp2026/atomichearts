@@ -51,6 +51,7 @@ public:
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
     virtual void Tick(float DeltaTime) override;
     virtual float TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
+    virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
     // Companion Management
     UFUNCTION(BlueprintCallable)
@@ -163,7 +164,7 @@ private:
     UPROPERTY(VisibleAnywhere)
     USphereComponent* DetectionSphere;
 
-    UPROPERTY()
+    UPROPERTY(Replicated)
     TArray<AActor*> DetectedEnemies;
 
     // Cooldowns

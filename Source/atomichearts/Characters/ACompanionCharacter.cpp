@@ -49,6 +49,7 @@ void ACompanionCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& 
     DOREPLIFETIME(ACompanionCharacter, CompanionRole);
     DOREPLIFETIME(ACompanionCharacter, CurrentTarget);
     DOREPLIFETIME(ACompanionCharacter, DefendPosition);
+    DOREPLIFETIME(ACompanionCharacter, DetectedEnemies);
 }
 
 void ACompanionCharacter::BeginPlay()
@@ -163,6 +164,8 @@ void ACompanionCharacter::FollowOwner()
     if (!OwnerPlayer)
         return;
 
+    // Bug 5 fix: clear any existing timer before setting new one
+    GetWorldTimerManager().ClearTimer(FollowTimerHandle);
     SetCompanionState(ECompanionState::Following);
     GetWorldTimerManager().SetTimer(FollowTimerHandle, this, &ACompanionCharacter::UpdateFollowBehavior, 0.1f, true);
 }
@@ -339,17 +342,35 @@ void ACompanionCharacter::UpdateSupportBehavior(float DeltaTime)
     // Check for allies that need healing (Support role)
     if (CompanionRole == ECompanionRole::Support)
     {
-        // Find nearby damaged allies
+        // 1. Heal owner if health low (Bug 3 fix)
+        if (OwnerPlayer->GetHealth() < OwnerPlayer->GetMaxHealth() * 0.5f)
+        {
+            UseAbility(0);
+            return;
+        }
+
+        // 2. Find nearby damaged allies (including other companions and tagged allies)
         TArray<AActor*> Allies;
-        UGameplayStatics::GetOverlappingActors(this, Allies, ACompanionCharacter::StaticClass());
-        
+        UGameplayStatics::GetOverlappingActors(this, Allies, AActor::StaticClass());
+
         for (AActor* Ally : Allies)
         {
-            if (ACompanionCharacter* Companion = Cast<ACompanionCharacter>(Ally))
+            // Skip self
+            if (Ally == this) continue;
+
+            // Check if actor is ally (has tag "Ally" or is a companion)
+            bool bIsAlly = Ally->ActorHasTag(TEXT("Ally"));
+            if (!bIsAlly)
             {
-                if (Companion->GetHealth() < Companion->GetMaxHealth() * 0.5f)
+                ACompanionCharacter* Companion = Cast<ACompanionCharacter>(Ally);
+                if (Companion) bIsAlly = true;
+            }
+
+            if (bIsAlly)
+            {
+                // Check health via GetHealth (assumes ANPCCharacter or AAtomichartsCharacter)
+                if (Ally->GetHealth() < Ally->GetMaxHealth() * 0.5f)
                 {
-                    // Use healing ability
                     UseAbility(0);
                     break;
                 }
@@ -510,5 +531,15 @@ float ACompanionCharacter::TakeDamage(float DamageAmount, FDamageEvent const& Da
         UE_LOG(LogTemp, Log, TEXT("Vanguard damage reduction applied: original=%.2f, reduced=%.2f (reduction %.0f%%)"), DamageAmount, ActualDamage, VanguardDamageReduction * 100.f);
     }
     return Super::TakeDamage(ActualDamage, DamageEvent, EventInstigator, DamageCauser);
+}
+
+void ACompanionCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+    Super::EndPlay(EndPlayReason);
+
+    // Bug 6 fix: clear all timer handles to avoid crashes
+    GetWorldTimerManager().ClearTimer(AIEvaluationTimerHandle);
+    GetWorldTimerManager().ClearTimer(FollowTimerHandle);
+    GetWorldTimerManager().ClearTimer(CombatTimerHandle);
 }
 
