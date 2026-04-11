@@ -27,6 +27,13 @@ void UAH_TimeSlowAbility::ActivateAbility(
         return;
     }
 
+    // Commit ability cost FIRST (before applying effect)
+    if (!CommitAbility(Handle, ActorInfo, ActivationInfo))
+    {
+        EndAbility(Handle, ActorInfo, ActivationInfo, true, false);
+        return;
+    }
+
     // Apply Time Slow effect to the caster (self)
     if (TimeSlowEffectClass)
     {
@@ -41,13 +48,6 @@ void UAH_TimeSlowAbility::ActivateAbility(
         {
             ActorInfo->AbilitySystemComponent->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data);
         }
-    }
-
-    // Commit ability cost (if any)
-    if (!CommitAbility(Handle, ActorInfo, ActivationInfo))
-    {
-        EndAbility(Handle, ActorInfo, ActivationInfo, true, false);
-        return;
     }
 
     // Success

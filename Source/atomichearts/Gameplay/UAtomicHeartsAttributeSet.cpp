@@ -19,6 +19,18 @@ UAtomicHeartsAttributeSet::UAtomicHeartsAttributeSet()
     Armor.SetCurrentValue(0.0f);
     DamageResistance.SetBaseValue(0.0f);
     DamageResistance.SetCurrentValue(0.0f);
+    Currency.SetBaseValue(0.0f);
+    Currency.SetCurrentValue(0.0f);
+    
+    // Weapon Attributes defaults
+    CurrentAmmo.SetBaseValue(30.0f);
+    CurrentAmmo.SetCurrentValue(30.0f);
+    MaxAmmo.SetBaseValue(30.0f);
+    MaxAmmo.SetCurrentValue(30.0f);
+    ReloadSpeed.SetBaseValue(1.0f);
+    ReloadSpeed.SetCurrentValue(1.0f);
+    FireRate.SetBaseValue(0.25f);
+    FireRate.SetCurrentValue(0.25f);
 }
 
 void UAtomicHeartsAttributeSet::PreAttributeChange(const FGameplayAttribute& Attribute, float& NewValue)
@@ -44,6 +56,31 @@ void UAtomicHeartsAttributeSet::PreAttributeChange(const FGameplayAttribute& Att
         // DamageResistance as percentage (0-1)
         NewValue = FMath::Clamp(NewValue, 0.0f, 1.0f);
     }
+    else if (Attribute == GetCurrencyAttribute())
+    {
+        NewValue = FMath::Max(NewValue, 0.0f);
+    }
+    else if (Attribute == GetCurrentAmmoAttribute())
+    {
+        // Clamp ammo between 0 and MaxAmmo
+        NewValue = FMath::Clamp(NewValue, 0.0f, GetMaxAmmo());
+    }
+    else if (Attribute == GetMaxAmmoAttribute())
+    {
+        // MaxAmmo must be >= 0
+        NewValue = FMath::Max(NewValue, 0.0f);
+        // If CurrentAmmo exceeds new Max, clamp later in PostGameplayEffectExecute
+    }
+    else if (Attribute == GetReloadSpeedAttribute())
+    {
+        // ReloadSpeed must be positive (minimum epsilon)
+        NewValue = FMath::Max(NewValue, 0.01f);
+    }
+    else if (Attribute == GetFireRateAttribute())
+    {
+        // FireRate as seconds between shots, must be positive
+        NewValue = FMath::Max(NewValue, 0.01f);
+    }
 }
 
 void UAtomicHeartsAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallbackData& Data)
@@ -60,6 +97,17 @@ void UAtomicHeartsAttributeSet::PostGameplayEffectExecute(const FGameplayEffectM
     {
         SetShield(FMath::Max(GetShield(), 0.0f));
     }
+    else if (Data.EvaluatedData.Attribute == GetCurrentAmmoAttribute())
+    {
+        SetCurrentAmmo(FMath::Clamp(GetCurrentAmmo(), 0.0f, GetMaxAmmo()));
+    }
+    else if (Data.EvaluatedData.Attribute == GetMaxAmmoAttribute())
+    {
+        // Ensure MaxAmmo >= 0
+        SetMaxAmmo(FMath::Max(GetMaxAmmo(), 0.0f));
+        // Clamp CurrentAmmo to new Max
+        SetCurrentAmmo(FMath::Clamp(GetCurrentAmmo(), 0.0f, GetMaxAmmo()));
+    }
 }
 
 void UAtomicHeartsAttributeSet::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -72,6 +120,12 @@ void UAtomicHeartsAttributeSet::GetLifetimeReplicatedProps(TArray<FLifetimePrope
     DOREPLIFETIME_CONDITION_NOTIFY(UAtomicHeartsAttributeSet, Shield, COND_None, REPNOTIFY_Always);
     DOREPLIFETIME_CONDITION_NOTIFY(UAtomicHeartsAttributeSet, Armor, COND_None, REPNOTIFY_Always);
     DOREPLIFETIME_CONDITION_NOTIFY(UAtomicHeartsAttributeSet, DamageResistance, COND_None, REPNOTIFY_Always);
+    DOREPLIFETIME_CONDITION_NOTIFY(UAtomicHeartsAttributeSet, Currency, COND_None, REPNOTIFY_Always);
+    // Weapon attributes
+    DOREPLIFETIME_CONDITION_NOTIFY(UAtomicHeartsAttributeSet, CurrentAmmo, COND_None, REPNOTIFY_Always);
+    DOREPLIFETIME_CONDITION_NOTIFY(UAtomicHeartsAttributeSet, MaxAmmo, COND_None, REPNOTIFY_Always);
+    DOREPLIFETIME_CONDITION_NOTIFY(UAtomicHeartsAttributeSet, ReloadSpeed, COND_None, REPNOTIFY_Always);
+    DOREPLIFETIME_CONDITION_NOTIFY(UAtomicHeartsAttributeSet, FireRate, COND_None, REPNOTIFY_Always);
 }
 
 void UAtomicHeartsAttributeSet::OnRep_Health(const FGameplayAttributeData& OldValue)
@@ -97,4 +151,8 @@ void UAtomicHeartsAttributeSet::OnRep_Armor(const FGameplayAttributeData& OldVal
 void UAtomicHeartsAttributeSet::OnRep_DamageResistance(const FGameplayAttributeData& OldValue)
 {
     GAMEPLAYATTRIBUTE_REPNOTIFY(UAtomicHeartsAttributeSet, DamageResistance, OldValue);
+}
+void UAtomicHeartsAttributeSet::OnRep_Currency(const FGameplayAttributeData& OldValue)
+{
+    GAMEPLAYATTRIBUTE_REPNOTIFY(UAtomicHeartsAttributeSet, Currency, OldValue);
 }
