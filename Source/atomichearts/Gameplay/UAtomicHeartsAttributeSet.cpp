@@ -31,6 +31,14 @@ UAtomicHeartsAttributeSet::UAtomicHeartsAttributeSet()
     ReloadSpeed.SetCurrentValue(1.0f);
     FireRate.SetBaseValue(0.25f);
     FireRate.SetCurrentValue(0.25f);
+    
+    // Stamina, Energy, MoveSpeed defaults
+    Stamina.SetBaseValue(100.0f);
+    Stamina.SetCurrentValue(100.0f);
+    Energy.SetBaseValue(100.0f);
+    Energy.SetCurrentValue(100.0f);
+    MoveSpeed.SetBaseValue(600.0f);
+    MoveSpeed.SetCurrentValue(600.0f);
 }
 
 void UAtomicHeartsAttributeSet::PreAttributeChange(const FGameplayAttribute& Attribute, float& NewValue)
@@ -81,6 +89,21 @@ void UAtomicHeartsAttributeSet::PreAttributeChange(const FGameplayAttribute& Att
         // FireRate as seconds between shots, must be positive
         NewValue = FMath::Max(NewValue, 0.01f);
     }
+    else if (Attribute == GetStaminaAttribute())
+    {
+        // Stamina must be non-negative
+        NewValue = FMath::Max(NewValue, 0.0f);
+    }
+    else if (Attribute == GetEnergyAttribute())
+    {
+        // Energy must be non-negative
+        NewValue = FMath::Max(NewValue, 0.0f);
+    }
+    else if (Attribute == GetMoveSpeedAttribute())
+    {
+        // MoveSpeed must be positive (minimum epsilon)
+        NewValue = FMath::Max(NewValue, 1.0f);
+    }
 }
 
 void UAtomicHeartsAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallbackData& Data)
@@ -126,6 +149,10 @@ void UAtomicHeartsAttributeSet::GetLifetimeReplicatedProps(TArray<FLifetimePrope
     DOREPLIFETIME_CONDITION_NOTIFY(UAtomicHeartsAttributeSet, MaxAmmo, COND_None, REPNOTIFY_Always);
     DOREPLIFETIME_CONDITION_NOTIFY(UAtomicHeartsAttributeSet, ReloadSpeed, COND_None, REPNOTIFY_Always);
     DOREPLIFETIME_CONDITION_NOTIFY(UAtomicHeartsAttributeSet, FireRate, COND_None, REPNOTIFY_Always);
+    // Movement/Resource attributes
+    DOREPLIFETIME_CONDITION_NOTIFY(UAtomicHeartsAttributeSet, Stamina, COND_None, REPNOTIFY_Always);
+    DOREPLIFETIME_CONDITION_NOTIFY(UAtomicHeartsAttributeSet, Energy, COND_None, REPNOTIFY_Always);
+    DOREPLIFETIME_CONDITION_NOTIFY(UAtomicHeartsAttributeSet, MoveSpeed, COND_None, REPNOTIFY_Always);
 }
 
 void UAtomicHeartsAttributeSet::OnRep_Health(const FGameplayAttributeData& OldValue)
@@ -155,4 +182,39 @@ void UAtomicHeartsAttributeSet::OnRep_DamageResistance(const FGameplayAttributeD
 void UAtomicHeartsAttributeSet::OnRep_Currency(const FGameplayAttributeData& OldValue)
 {
     GAMEPLAYATTRIBUTE_REPNOTIFY(UAtomicHeartsAttributeSet, Currency, OldValue);
+}
+
+void UAtomicHeartsAttributeSet::OnRep_CurrentAmmo(const FGameplayAttributeData& OldValue)
+{
+    GAMEPLAYATTRIBUTE_REPNOTIFY(UAtomicHeartsAttributeSet, CurrentAmmo, OldValue);
+}
+
+void UAtomicHeartsAttributeSet::OnRep_MaxAmmo(const FGameplayAttributeData& OldValue)
+{
+    GAMEPLAYATTRIBUTE_REPNOTIFY(UAtomicHeartsAttributeSet, MaxAmmo, OldValue);
+}
+
+void UAtomicHeartsAttributeSet::OnRep_ReloadSpeed(const FGameplayAttributeData& OldValue)
+{
+    GAMEPLAYATTRIBUTE_REPNOTIFY(UAtomicHeartsAttributeSet, ReloadSpeed, OldValue);
+}
+
+void UAtomicHeartsAttributeSet::OnRep_FireRate(const FGameplayAttributeData& OldValue)
+{
+    GAMEPLAYATTRIBUTE_REPNOTIFY(UAtomicHeartsAttributeSet, FireRate, OldValue);
+}
+
+void UAtomicHeartsAttributeSet::OnRep_Stamina(const FGameplayAttributeData& OldValue)
+{
+    GAMEPLAYATTRIBUTE_REPNOTIFY(UAtomicHeartsAttributeSet, Stamina, OldValue);
+}
+
+void UAtomicHeartsAttributeSet::OnRep_Energy(const FGameplayAttributeData& OldValue)
+{
+    GAMEPLAYATTRIBUTE_REPNOTIFY(UAtomicHeartsAttributeSet, Energy, OldValue);
+}
+
+void UAtomicHeartsAttributeSet::OnRep_MoveSpeed(const FGameplayAttributeData& OldValue)
+{
+    GAMEPLAYATTRIBUTE_REPNOTIFY(UAtomicHeartsAttributeSet, MoveSpeed, OldValue);
 }

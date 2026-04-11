@@ -85,10 +85,20 @@ void UHealthRegenComponent::ApplyRegen(float DeltaTime)
         return;
     }
 
-    // Use ICombatDamageable directly (single healing path)
     float RegenAmount = RegenRate * DeltaTime;
-    float NewHealth = FMath::Clamp(CurrentHealth + RegenAmount, 0.0f, MaxHealth);
-    DamageableInterface->SetHealth(NewHealth);
+    
+    // Try GAS healing path if available
+    UAbilitySystemComponent* ASC = GetOwnerASC();
+    if (ASC)
+    {
+        ApplyGASHealing(RegenAmount);
+    }
+    else
+    {
+        // Fallback to direct healing
+        float NewHealth = FMath::Clamp(CurrentHealth + RegenAmount, 0.0f, MaxHealth);
+        DamageableInterface->SetHealth(NewHealth);
+    }
 }
 
 UAbilitySystemComponent* UHealthRegenComponent::GetOwnerASC() const
@@ -102,7 +112,25 @@ UAbilitySystemComponent* UHealthRegenComponent::GetOwnerASC() const
 
 void UHealthRegenComponent::ApplyGASHealing(float RegenAmount)
 {
-    // NOTE: GAS healing path removed — magnitude was never set on the spec,
-    // making the GAS path non-functional. Using ICombatDamageable directly
-    // as the single source of truth for health regeneration.
+    UAbilitySystemComponent* ASC = GetOwnerASC();
+    if (!ASC)
+    {
+        return;
+    }
+
+    // Create a spec from the healing effect class
+    TSubclassOf<UGameplayEffect> HealingEffectClass = UHealingEffect::StaticClass();
+    if (!HealingEffectClass)
+    {
+        return;
+    }
+
+    FGameplayEffectSpecHandle SpecHandle = ASC->MakeOutgoingSpec(HealingEffectClass, 1.0f, ASC->MakeEffectContext());
+    if (SpecHandle.IsValid())
+    {
+        // Set the SetByCaller magnitude using DataName "Healing"
+        SpecHandle.Data->SetSetByCallerMagnitude(FName("Healing"), RegenAmount);
+        // Apply the effect to self
+        ASC->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data);
+    }
 }

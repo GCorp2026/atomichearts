@@ -17,20 +17,20 @@ void UAH_TimeSlowAbility::ActivateAbility(
 {
     if (!HasAuthority(&ActivationInfo))
     {
-        EndAbility(Handle, ActorInfo, ActivationInfo, true, false);
+        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
         return;
     }
 
     if (!ActorInfo || !ActorInfo->AbilitySystemComponent.IsValid())
     {
-        EndAbility(Handle, ActorInfo, ActivationInfo, true, false);
+        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
         return;
     }
 
     // Commit ability cost FIRST (before applying effect)
     if (!CommitAbility(Handle, ActorInfo, ActivationInfo))
     {
-        EndAbility(Handle, ActorInfo, ActivationInfo, true, false);
+        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
         return;
     }
 
