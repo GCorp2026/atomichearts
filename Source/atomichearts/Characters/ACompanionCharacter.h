@@ -5,6 +5,9 @@
 #include "CoreMinimal.h"
 #include "Characters/ANPCCharacter.h"
 #include "Components/TimelineComponent.h"
+#include "AbilitySystemInterface.h"
+#include "AbilitySystemComponent.h"
+#include "Gameplay/UAtomicHeartsAttributeSet.h"
 #include "CompanionCharacter.generated.h"
 
 class AAtomicheartsCharacter;
@@ -41,12 +44,16 @@ enum class ECompanionRole : uint8
  * ACompanionCharacter - AI-controlled ally that follows and assists player
  */
 UCLASS()
-class ATOMICHEARTS_API ACompanionCharacter : public ANPCCharacter
+class ATOMICHEARTS_API ACompanionCharacter : public ANPCCharacter, public IAbilitySystemInterface
 {
     GENERATED_BODY()
 
 public:
     ACompanionCharacter();
+
+    virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
+    UFUNCTION(BlueprintPure, Category = "GAS")
+    UAtomicHeartsAttributeSet* GetAttributeSet() const;
 
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
     virtual void Tick(float DeltaTime) override;
@@ -163,6 +170,13 @@ private:
     // AI Detection
     UPROPERTY(VisibleAnywhere)
     USphereComponent* DetectionSphere;
+
+    // Gameplay Ability System (GAS)
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess = "true"))
+    UAbilitySystemComponent* AbilitySystemComponent;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess = "true"))
+    UAtomicHeartsAttributeSet* AttributeSet;
 
     UPROPERTY(Replicated)
     TArray<AActor*> DetectedEnemies;

@@ -8,6 +8,7 @@
 #include "UClassAbilityComponent.generated.h"
 
 class UGameplayAbility;
+class UAbilitySystemComponent;
 class UAnimMontage;
 
 /**
@@ -43,6 +44,21 @@ struct FAbilityDefinition
 	float Cost = 0.f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TSubclassOf<UGameplayAbility> AbilityClass;
+};
+
+/**
+ * GAS ability class mapping
+ */
+USTRUCT(BlueprintType)
+struct FAbilityClassMapping
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "GAS")
+	EAbilityType AbilityType = EAbilityType::None;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "GAS")
 	TSubclassOf<UGameplayAbility> AbilityClass;
 };
 
@@ -89,6 +105,9 @@ public:
 	UFUNCTION(BlueprintPure)
 	EAbilityType GetAbilityType(int32 SlotIndex) const;
 
+	/** Get GAS ability class for ability type */
+	TSubclassOf<UGameplayAbility> GetAbilityClassForType(EAbilityType AbilityType) const;
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
@@ -112,6 +131,15 @@ private:
 
 	UPROPERTY()
 	AActor* OwnerActor = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "GAS")
+	TArray<FAbilityClassMapping> GASAbilityClasses;
+
+	UPROPERTY()
+	UAbilitySystemComponent* CachedAbilitySystemComponent;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Abilities")
+	TSubclassOf<UGameplayAbility> TimeSlowAbilityClass;
 
 	float ChargeAccumulator = 0.f;
 };

@@ -1,11 +1,15 @@
 // Copyright 2024 Destiny Cyberpunk
 
 #include "UClassAbilityComponent.h"
+#include "AbilitySystemInterface.h"
+#include "AbilitySystemComponent.h"
+#include "Abilities/UAH_TimeSlowAbility.h"
 #include "EClassType.h"
 #include "GameplayAbility.h"
 #include "AbilitySystemComponent.h"
 #include "AAtomichartsCharacter.h"
 #include "Grenade/UGrenadeComponent.h"
+#include "AbilitySystemInterface.h"
 
 UClassAbilityComponent::UClassAbilityComponent()
 {
@@ -19,6 +23,18 @@ void UClassAbilityComponent::BeginPlay()
 	Super::BeginPlay();
 	OwnerActor = GetOwner();
 	ConfigureAbilitiesForClass();
+	
+	// Cache AbilitySystemComponent
+	if (OwnerActor)
+	{
+		if (IAbilitySystemInterface* AbilitySystemInterface = Cast<IAbilitySystemInterface>(OwnerActor))
+		{
+			CachedAbilitySystemComponent = AbilitySystemInterface->GetAbilitySystemComponent();
+		}
+	}
+	
+	// Grant GAS abilities if any
+	GrantAbilitiesToActor();
 }
 
 void UClassAbilityComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
@@ -158,6 +174,17 @@ bool UClassAbilityComponent::ActivateAbility(int32 SlotIndex)
 		GrenadeComp->ThrowGrenade();
 		UE_LOG(LogTemp, Log, TEXT("Grenade ability activated: %d"), (uint8)Def.AbilityType);
 	}
+	else if (Def.AbilityType == EAbilityType::TimeSlow && TimeSlowAbilityClass)
+	{
+		// Use Gameplay Ability System
+		if (IAbilitySystemInterface* ASCInterface = Cast<IAbilitySystemInterface>(Owner))
+		{
+			if (UAbilitySystemComponent* ASC = ASCInterface->GetAbilitySystemComponent())
+			{
+				ASC->TryActivateAbilityByClass(TimeSlowAbilityClass);
+			}
+		}
+	}
 	else
 	{
 		// Notify character to play animation / spawn effects (original behavior)
@@ -167,9 +194,6 @@ bool UClassAbilityComponent::ActivateAbility(int32 SlotIndex)
 		}
 	}
 
-	StartCooldown(SlotIndex, Def.Cooldown);
-	return true;
-}
 
 bool UClassAbilityComponent::ActivateUltimate()
 {
@@ -215,5 +239,36 @@ void UClassAbilityComponent::ReduceCooldowns(float Amount)
 
 void UClassAbilityComponent::GrantAbilitiesToActor()
 {
-	// Placeholder: In full GAS setup, this would give abilities via AbilitySystemComponent
+	if (!CachedAbilitySystemComponent)
+	{
+		return;
+	}
+	
+	// Only grant on server authority
+	if (!GetOwner()->HasAuthority())
+	{
+		return;
+	}
+	
+	for (const FAbilityClassMapping& Mapping : GASAbilityClasses)
+	{
+		if (Mapping.AbilityClass)
+		{
+			// Grant ability with source object this component
+			FGameplayAbilitySpec AbilitySpec(Mapping.AbilityClass, 1, INDEX_NONE, this);
+			CachedAbilitySystemComponent->GiveAbility(AbilitySpec);
+		}
+	}
+}
+
+TSubclassOf<UGameplayAbility> UClassAbilityComponent::GetAbilityClassForType(EAbilityType AbilityType) const
+{
+	for (const FAbilityClassMapping& Mapping : GASAbilityClasses)
+	{
+		if (Mapping.AbilityType == AbilityType)
+		{
+			return Mapping.AbilityClass;
+		}
+	}
+	return nullptr;
 }

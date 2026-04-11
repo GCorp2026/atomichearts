@@ -26,6 +26,9 @@ public:
     UFUNCTION(BlueprintCallable)
     void AddCurrency(int32 Amount, int64 PlayerID);
 
+    UFUNCTION(BlueprintCallable)
+    bool RemoveCurrency(int32 Amount, int64 PlayerID);
+
     /** Set the MarketplaceManager to bind events to */
     UFUNCTION(BlueprintCallable)
     void SetMarketplaceManager(UMarketplaceManager* InMarketplace);
